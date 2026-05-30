@@ -1,0 +1,3 @@
+[mcp_servers.agentation]
+command = "pnpm"
+args = ["exec", "agentation-mcp", "server", "--mcp-only", "--http-url", "http://localhost:4747"]
