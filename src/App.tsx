@@ -1,8 +1,12 @@
+import AppTabs from "./components/AppTabs";
+import DevAgentation from "./components/DevAgentation";
+import "./App.css";
+
 export default function App() {
   return (
-    <main className="home">
-      <h1 className="title">juguitsu</h1>
-      <p className="tagline">Tauri and React</p>
-    </main>
+    <div className="app">
+      <AppTabs />
+      <DevAgentation />
+    </div>
   );
 }
