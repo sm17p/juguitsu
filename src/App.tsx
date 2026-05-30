@@ -1,11 +1,11 @@
-import AppTabs from "./components/AppTabs";
 import DevAgentation from "./components/DevAgentation";
+import WorkbenchLayout from "./components/WorkbenchLayout";
 import "./App.css";
 
 export default function App() {
   return (
     <div className="app">
-      <AppTabs />
+      <WorkbenchLayout />
       <DevAgentation />
     </div>
   );

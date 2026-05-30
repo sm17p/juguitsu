@@ -13,7 +13,7 @@ function FilesPanel() {
     <>
       <h1 className="title">juguitsu</h1>
       <p className="tagline">Local jj workbench</p>
-      <p className="hint">Open a repo to browse files.</p>
+      <p className="hint">Select a file from the tree to preview it here.</p>
     </>
   );
 }
@@ -31,7 +31,6 @@ export default function AppTabs() {
             {label}
           </Tabs.Trigger>
         ))}
-        <Tabs.Indicator className={styles.indicator} />
       </Tabs.List>
       {tabs.map(({ value, body }) => (
         <Tabs.Content key={value} className={styles.content} value={value}>
