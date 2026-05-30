@@ -7,20 +7,6 @@ import useMediaNarrow from "@/lib/use-media-narrow";
 import AppTabs from "./AppTabs";
 import WorkbenchToolbar from "./WorkbenchToolbar";
 
-const outerPanelsWide = [
-  { id: "repos", minSize: 12, collapsible: true, collapsedSize: 0 },
-  { id: "workspace", minSize: 40 },
-] as const;
-
-const innerPanelsWide = [
-  { id: "tree", minSize: 16, collapsible: true, collapsedSize: 0 },
-  { id: "main", minSize: 28 },
-] as const;
-
-const outerPanelsNarrow = [{ id: "workspace", minSize: 100 }] as const;
-
-const innerPanelsNarrow = [{ id: "main", minSize: 100 }] as const;
-
 export default function WorkbenchLayout() {
   const narrow = useMediaNarrow();
   const [outerSize, setOuterSize] = useState<number[]>([18, 82]);
@@ -41,7 +27,14 @@ export default function WorkbenchLayout() {
       <h1 className="sr-only">Juguitsu</h1>
       <Splitter.Root
         className="flex min-h-0 w-full flex-1"
-        panels={narrow ? [...outerPanelsNarrow] : [...outerPanelsWide]}
+        panels={
+          narrow
+            ? [{ id: "workspace", minSize: 100 }]
+            : [
+                { id: "repos", minSize: 12, collapsible: true, collapsedSize: 0 },
+                { id: "workspace", minSize: 40 },
+              ]
+        }
         size={outerSize}
         onResize={({ size }) => setOuterSize(size)}
       >
@@ -93,7 +86,14 @@ export default function WorkbenchLayout() {
             <WorkbenchToolbar />
             <Splitter.Root
               className="flex min-h-0 flex-1"
-              panels={narrow ? [...innerPanelsNarrow] : [...innerPanelsWide]}
+              panels={
+                narrow
+                  ? [{ id: "main", minSize: 100 }]
+                  : [
+                      { id: "tree", minSize: 16, collapsible: true, collapsedSize: 0 },
+                      { id: "main", minSize: 28 },
+                    ]
+              }
               size={innerSize}
               onResize={({ size }) => setInnerSize(size)}
             >

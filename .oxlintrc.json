@@ -7,10 +7,7 @@
   },
   "rules": {
     "react/react-in-jsx-scope": "off",
-    "typescript/consistent-type-assertions": [
-      "error",
-      { "assertionStyle": "never" }
-    ]
+    "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }]
   },
   "settings": {
     "react": {
@@ -28,6 +25,9 @@
   "ignorePatterns": [
     "dist/**",
     ".agents/**",
-    "src-tauri/target/**"
+    "src-tauri/target/**",
+    "src-tauri/gen/**",
+    "node_modules/**",
+    ".cursor/**"
   ]
 }

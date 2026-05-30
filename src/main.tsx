@@ -1,9 +1,14 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
+import { initCrashLogger } from "@/lib/crash-logger";
+
 import App from "./App";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 import "./index.css";
+
+initCrashLogger();
 
 const rootElement = document.getElementById("root");
 if (rootElement == null) {
@@ -12,6 +17,8 @@ if (rootElement == null) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 );
