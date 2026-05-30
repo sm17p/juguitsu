@@ -83,7 +83,7 @@ Do not port Linear-specific tactics (IndexedDB, service workers, modulepreload w
 ## Stack Rules
 
 - **React 19 + Vite** for UI; **TypeScript** strict, no type assertions.
-- **Ark UI** (`@ark-ui/react/*`) for interactive primitives; style with CSS modules or scoped CSS using Ark `data-*` attributes.
+- **Ark UI** (`@ark-ui/react/*`) for interactive primitives; style with Tailwind utilities and Ark `data-*` variants.
 - **Pierre** React entrypoints for trees and diffs; use `WorkerPoolContextProvider` / `Virtualizer` per Pierre docs when lists or diffs are large.
 - **Tauri** for all jj/git/filesystem IO — do not shell out from the frontend.
 - Prefer **verb-based** names for methods that do work; nouns for pure accessors.
@@ -104,7 +104,7 @@ Only write code after this is clear. **Plan and ask for review** before implemen
 
 ## Visual Direction
 
-- **Neutral workbench chrome** — light/dark via CSS variables (`src/styles/theme.css`); system theme as default.
+- **Neutral workbench chrome** — light/dark via Tailwind theme tokens (`src/index.css` `@theme`); system theme as default.
 - **Density over whitespace** — readable at 13–14px body; mono for change ids, paths, hashes.
 - **GitHub-familiar layout**, not GitHub brand colors — one accent, gray surfaces, clear borders.
 - **Status over decoration** — git/jj badges (Trees), ahead/behind pills, dirty count; no hero illustrations.
