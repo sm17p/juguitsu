@@ -1,4 +1,5 @@
 mod crash_log;
+mod repo;
 
 use color_eyre::eyre::Context;
 use tauri_plugin_log::{Target, TargetKind};
@@ -33,6 +34,7 @@ pub fn run() {
                 })
                 .build(),
         )
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             let log_dir =
@@ -42,7 +44,12 @@ pub fn run() {
             tracing::info!("juguitsu started");
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![greet, crash_log::log_crash])
+        .invoke_handler(tauri::generate_handler![
+            greet,
+            crash_log::log_crash,
+            repo::list_recent_repos,
+            repo::open_repo_at,
+        ])
         .run(tauri::generate_context!())
         .context("error while running tauri application")
         .expect("error while running tauri application");

@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import Icons from "unplugin-icons/vite";
 import { defineConfig } from "vite";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -10,7 +11,14 @@ const root = path.dirname(fileURLToPath(import.meta.url));
 const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    Icons({
+      compiler: "jsx",
+      jsx: "react",
+    }),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(root, "src"),

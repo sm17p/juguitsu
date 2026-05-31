@@ -3,14 +3,23 @@ import { useEffect, useState } from "react";
 
 import cn from "@/lib/cn";
 import useMediaNarrow from "@/lib/use-media-narrow";
+import useOpenRepoShortcut from "@/lib/use-open-repo-shortcut";
+import useWorkspace from "@/lib/use-workspace";
 
 import AppTabs from "./AppTabs";
+import PaneHeader from "./PaneHeader";
+import ReviewSidebar from "./ReviewSidebar";
 import WorkbenchToolbar from "./WorkbenchToolbar";
 
 export default function WorkbenchLayout() {
   const narrow = useMediaNarrow();
+  const { recents, activeRepo, openError, pickAndOpen, openRecent } = useWorkspace();
   const [outerSize, setOuterSize] = useState<number[]>([18, 82]);
   const [innerSize, setInnerSize] = useState<number[]>([28, 72]);
+
+  useOpenRepoShortcut(() => {
+    void pickAndOpen();
+  });
 
   useEffect(() => {
     if (narrow) {
@@ -31,7 +40,7 @@ export default function WorkbenchLayout() {
           narrow
             ? [{ id: "workspace", minSize: 100 }]
             : [
-                { id: "repos", minSize: 12, collapsible: true, collapsedSize: 0 },
+                { id: "review", minSize: 12, collapsible: true, collapsedSize: 0 },
                 { id: "workspace", minSize: 40 },
               ]
         }
@@ -42,33 +51,26 @@ export default function WorkbenchLayout() {
           <>
             <Splitter.Panel
               className={cn("flex min-h-0 min-w-0 flex-col overflow-hidden bg-bg")}
-              id="repos"
+              id="review"
             >
-              <nav aria-label="Repositories" className="flex h-full min-h-0 flex-col gap-2 p-2">
-                <h2
-                  className={cn(
-                    "shrink-0 px-2 pt-2 text-[0.6875rem] font-semibold tracking-wider text-fg-muted uppercase",
-                  )}
-                >
-                  Repos
-                </h2>
-                <div className="min-h-0 flex-1" />
-                <button
-                  type="button"
-                  className={cn(
-                    "flex h-11 min-h-11 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border bg-bg-subtle px-3 text-xs font-medium text-fg hover:border-accent hover:text-accent-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring",
-                  )}
-                >
-                  Open…
-                </button>
-              </nav>
+              <ReviewSidebar
+                activeRepo={activeRepo}
+                openError={openError}
+                recents={recents}
+                onOpen={() => {
+                  void pickAndOpen();
+                }}
+                onSelectRecent={(path) => {
+                  void openRecent(path);
+                }}
+              />
             </Splitter.Panel>
             <Splitter.ResizeTrigger
               className={cn(
                 "flex w-3 shrink-0 cursor-col-resize items-stretch justify-center border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-[-1px] focus-visible:outline-focus-ring",
               )}
-              id="repos:workspace"
-              aria-label="Resize repos pane"
+              id="review:workspace"
+              aria-label="Resize review pane"
             >
               <Splitter.ResizeTriggerIndicator
                 className={cn(
@@ -83,7 +85,13 @@ export default function WorkbenchLayout() {
           id="workspace"
         >
           <main className="flex h-full min-h-0 flex-col">
-            <WorkbenchToolbar />
+            <WorkbenchToolbar
+              narrow={narrow}
+              repo={activeRepo}
+              onOpen={() => {
+                void pickAndOpen();
+              }}
+            />
             <Splitter.Root
               className="flex min-h-0 flex-1"
               panels={
@@ -103,16 +111,7 @@ export default function WorkbenchLayout() {
                     className={cn("flex min-h-0 min-w-0 flex-col overflow-hidden bg-bg")}
                     id="tree"
                   >
-                    <div className="flex h-full min-h-0 flex-col">
-                      <h2
-                        className={cn(
-                          "shrink-0 px-2 pt-2 text-[0.6875rem] font-semibold tracking-wider text-fg-muted uppercase",
-                        )}
-                      >
-                        Files
-                      </h2>
-                      <div className="min-h-0 flex-1" />
-                    </div>
+                    <PaneHeader>Files</PaneHeader>
                   </Splitter.Panel>
                   <Splitter.ResizeTrigger
                     className={cn(

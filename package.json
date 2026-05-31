@@ -18,15 +18,24 @@
   },
   "dependencies": {
     "@ark-ui/react": "^5.37.0",
+    "@effect-atom/atom": "^0.5.3",
+    "@effect-atom/atom-react": "^0.5.0",
+    "@effect/experimental": "^0.60.0",
     "@tauri-apps/api": "^2.11.0",
+    "@tauri-apps/plugin-dialog": "^2.7.1",
     "@tauri-apps/plugin-log": "~2.8.0",
     "@tauri-apps/plugin-opener": "^2.5.4",
     "clsx": "^2.1.1",
+    "effect": "^3.21.2",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "scheduler": "^0.27.0",
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@iconify-json/tabler": "^1.2.35",
+    "@svgr/core": "^8.1.0",
+    "@svgr/plugin-jsx": "^8.1.0",
     "@tailwindcss/vite": "^4.3.0",
     "@tauri-apps/cli": "^2.11.2",
     "@types/node": "^25.9.1",
@@ -40,6 +49,7 @@
     "oxlint-tsgolint": "^0.23.0",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.3",
+    "unplugin-icons": "^23.0.1",
     "vite": "^8.0.14"
   }
 }
