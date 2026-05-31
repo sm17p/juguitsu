@@ -1,0 +1,19 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    "dist/**",
+    ".agents/**",
+    "src-tauri/target/**",
+    "src-tauri/gen/**",
+    "node_modules/**",
+    ".cursor/**"
+  ],
+  "endOfLine": "lf",
+  "insertFinalNewline": true,
+  "sortImports": true,
+  "sortTailwindcss": {
+    "stylesheet": "./src/index.css",
+    "functions": ["cn"]
+  },
+  "sortPackageJson": true
+}

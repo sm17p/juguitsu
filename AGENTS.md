@@ -41,7 +41,7 @@ async function updateIssue({ issue }) {
     body: JSON.stringify({ title: issue.title }),
   });
   const updated = await response.json();
-  setIssue(updated)
+  setIssue(updated);
   hideSpinner();
 }
 
@@ -58,11 +58,7 @@ If you're not building a custom sync engine, use libraries like Tanstack Query o
 
 ```typescript
 // optimistic mutation with SWR
-mutate(
-  `/api/issues/${issue.id}`,
-  { ...issue, title: "Faster app launch" },
-  false
-);
+mutate(`/api/issues/${issue.id}`, { ...issue, title: "Faster app launch" }, false);
 
 // vs Linear
 issue.title = "Faster app launch";
@@ -80,7 +76,7 @@ Target only modern browsers, drop legacy polyfills, and use aggressive code spli
 export default defineConfig({
   plugins: [react()],
   build: {
-    target: "esnext",            // no legacy syntax, no polyfills
+    target: "esnext", // no legacy syntax, no polyfills
     cssMinify: "lightningcss",
     modulePreload: { polyfill: false },
     rollupOptions: {
@@ -106,14 +102,26 @@ Split every npm package into its own chunk. A traditional `vendor.js` invalidate
 Eliminate the waterfall of fetch → parse → fetch imports by declaring all critical chunks in `<head>`:
 
 ```html
-<script type=module crossorigin
-  src="https://static.linear.app/client/assets/html.2_JBQs3Q.js"></script>
-<link rel=modulepreload crossorigin
-  href="https://static.linear.app/client/assets/vendor-mobx.Crhy2qQc.js">
-<link rel=modulepreload crossorigin
-  href="https://static.linear.app/client/assets/SyncWebSocket.Djw6l_Op.js">
-<link rel=modulepreload crossorigin
-  href="https://static.linear.app/client/assets/DatabaseManager.DKssGAN8.js">
+<script
+  type="module"
+  crossorigin
+  src="https://static.linear.app/client/assets/html.2_JBQs3Q.js"
+></script>
+<link
+  rel="modulepreload"
+  crossorigin
+  href="https://static.linear.app/client/assets/vendor-mobx.Crhy2qQc.js"
+/>
+<link
+  rel="modulepreload"
+  crossorigin
+  href="https://static.linear.app/client/assets/SyncWebSocket.Djw6l_Op.js"
+/>
+<link
+  rel="modulepreload"
+  crossorigin
+  href="https://static.linear.app/client/assets/DatabaseManager.DKssGAN8.js"
+/>
 <!-- ...around many more -->
 ```
 
@@ -168,21 +176,19 @@ Inline JavaScript restores last-known shell tokens (sidebar bg, width, dark mode
 
 ```javascript
 <script>
-// Electron context — lets CSS branch on native chrome.
-if (navigator.userAgent.includes("Electron") && navigator.userAgent.includes("Linear")) document.documentElement.classList.add("electron");
-
-// No local store → no workspace data → render the auth layout.
-if (localStorage.getItem("ApplicationStore") === null) document.documentElement.classList.add("logged-out");
-
-// Restore last-known shell tokens (sidebar bg, width, dark mode) before paint.
-const c = JSON.parse(localStorage.getItem("splashScreenConfig") || "{}");
-if (c.bgSidebarColor) document.documentElement.style.setProperty("--bg-sidebar-color", c.bgSidebarColor);
-if (c.sidebarWidth) document.documentElement.style.setProperty("--sidebar-width", c.sidebarWidth + "px");
-if (c.darkMode) document.documentElement.classList.add("dark");
-
-// Compact sidebar to a sliver when the user opens links in the desktop app.
-if (JSON.parse(localStorage.getItem("userSettings") || "{}").openLinksInDesktop) document.documentElement.style.setProperty("--sidebar-width", "8px");
-
+  // Electron context — lets CSS branch on native chrome. if
+  (navigator.userAgent.includes("Electron") && navigator.userAgent.includes("Linear"))
+  document.documentElement.classList.add("electron"); // No local store → no workspace data → render
+  the auth layout. if (localStorage.getItem("ApplicationStore") === null)
+  document.documentElement.classList.add("logged-out"); // Restore last-known shell tokens (sidebar
+  bg, width, dark mode) before paint. const c =
+  JSON.parse(localStorage.getItem("splashScreenConfig") || "{}"); if (c.bgSidebarColor)
+  document.documentElement.style.setProperty("--bg-sidebar-color", c.bgSidebarColor); if
+  (c.sidebarWidth) document.documentElement.style.setProperty("--sidebar-width", c.sidebarWidth +
+  "px"); if (c.darkMode) document.documentElement.classList.add("dark"); // Compact sidebar to a
+  sliver when the user opens links in the desktop app. if
+  (JSON.parse(localStorage.getItem("userSettings") || "{}").openLinksInDesktop)
+  document.documentElement.style.setProperty("--sidebar-width", "8px");
 </script>
 ```
 
@@ -194,10 +200,14 @@ Preload variable fonts with correct CORS mode to avoid double-fetching:
 
 ```html
 <!-- in <head> of index.html -->
-<link rel="preload"
-      href="https://static.linear.app/fonts/InterVariable.woff2?v=4.1"
-      as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preconnect" href="https://static.linear.app" crossorigin>
+<link
+  rel="preload"
+  href="https://static.linear.app/fonts/InterVariable.woff2?v=4.1"
+  as="font"
+  type="font/woff2"
+  crossorigin="anonymous"
+/>
+<link rel="preconnect" href="https://static.linear.app" crossorigin />
 ```
 
 ```css
@@ -205,8 +215,7 @@ Preload variable fonts with correct CORS mode to avoid double-fetching:
   font-family: "Inter Variable";
   font-weight: 100 900;
   font-display: swap;
-  src: url(https://static.linear.app/fonts/InterVariable.woff2?v=4.1)
-       format("woff2");
+  src: url(https://static.linear.app/fonts/InterVariable.woff2?v=4.1) format("woff2");
 }
 /* Italic and Berkeley Mono follow the same shape, single woff2 each. */
 ```
@@ -262,8 +271,8 @@ Never animate layout-triggering properties:
 
 /* What you'd write if you didn't know better */
 .row:hover {
-  margin-left: 2px;       /* triggers layout for every row beneath */
-  transition: all 0.2s;   /* and now you're animating margin */
+  margin-left: 2px; /* triggers layout for every row beneath */
+  transition: all 0.2s; /* and now you're animating margin */
 }
 ```
 
@@ -275,10 +284,10 @@ Default to shorter transitions than industry norms:
 /* variables form Linear's stylesheet */
 
 --speed-highlightFadeIn: 0s;
---speed-highlightFadeOut: .15s;
---speed-quickTransition: .1s;
---speed-regularTransition: .25s;
---speed-slowTransition: .35s;
+--speed-highlightFadeOut: 0.15s;
+--speed-quickTransition: 0.1s;
+--speed-regularTransition: 0.25s;
+--speed-slowTransition: 0.35s;
 ```
 
 Use asymmetric timing: appear instantly when summoned, fade out over 150ms when dismissed. This makes the interface feel responsive to user intent.

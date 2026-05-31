@@ -1,11 +1,10 @@
-import AppTabs from "./components/AppTabs";
 import DevAgentation from "./components/DevAgentation";
-import "./App.css";
+import WorkbenchLayout from "./components/WorkbenchLayout";
 
 export default function App() {
   return (
-    <div className="app">
-      <AppTabs />
+    <div className="flex h-screen min-h-0 flex-col overflow-hidden">
+      <WorkbenchLayout />
       <DevAgentation />
     </div>
   );

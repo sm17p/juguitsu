@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "unicorn", "oxc"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "react/react-in-jsx-scope": "off",
+    "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }]
+  },
+  "settings": {
+    "react": {
+      "version": "19.2"
+    }
+  },
+  "options": {
+    "typeAware": true,
+    "typeCheck": true
+  },
+  "env": {
+    "browser": true,
+    "es6": true
+  },
+  "ignorePatterns": [
+    "dist/**",
+    ".agents/**",
+    "src-tauri/target/**",
+    "src-tauri/gen/**",
+    "node_modules/**",
+    ".cursor/**"
+  ]
+}
