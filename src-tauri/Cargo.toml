@@ -28,4 +28,5 @@ log = "0.4.30"
 color-eyre = "0.6.5"
 thiserror = "2.0.18"
 jiff = "0.2.28"
+tauri-plugin-dialog = "2.7.1"
 
