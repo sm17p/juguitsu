@@ -20,6 +20,10 @@ const iconToneClass = {
   muted: "text-fg-muted",
 } as const;
 
+const headerRowClass = "flex items-center gap-1.5 px-1 py-0.5";
+const sidebarIconClass = "size-3 shrink-0";
+const emptyCopyClass = "m-0 py-0 pl-5 pr-1 text-xs text-fg-muted";
+
 export default function SidebarSection({
   title,
   emptyLabel,
@@ -30,19 +34,19 @@ export default function SidebarSection({
   const empty = children == null;
 
   return (
-    <section className="flex flex-col gap-0.5">
-      <div className="flex items-center gap-1 px-1.5 pb-0.5">
+    <section className="flex flex-col gap-0">
+      <div className={headerRowClass}>
         {Icon ? (
-          <Icon aria-hidden className={cn("size-3 shrink-0", iconToneClass[iconTone])} />
+          <Icon aria-hidden className={cn(sidebarIconClass, iconToneClass[iconTone])} />
         ) : null}
-        <PaneHeader className="px-0 pt-0 pb-0">{title}</PaneHeader>
+        <PaneHeader className="px-0 pt-0 pb-0 leading-none">{title}</PaneHeader>
       </div>
       {empty ? (
-        <p className="m-0 px-1.5 py-1 text-xs text-fg-muted" role="status">
+        <p className={emptyCopyClass} role="status">
           {emptyLabel}
         </p>
       ) : (
-        <ul className="m-0 flex list-none flex-col gap-px p-0 pl-1">{children}</ul>
+        <ul className="m-0 flex list-none flex-col gap-px p-0">{children}</ul>
       )}
     </section>
   );
@@ -61,7 +65,7 @@ export function SidebarRow({ label, selected = false, onSelect }: RowProps) {
         type="button"
         aria-current={selected ? "true" : undefined}
         className={cn(
-          "flex h-8 min-h-8 w-full cursor-pointer items-center rounded px-1.5 text-left text-xs transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring motion-reduce:transition-none",
+          "focus-kbd flex h-8 min-h-8 w-full cursor-pointer items-center rounded px-1 text-left text-xs transition-colors duration-150 motion-reduce:transition-none",
           selected
             ? "bg-accent-subtle font-medium text-fg"
             : "text-fg-muted hover:bg-bg-subtle hover:text-fg",

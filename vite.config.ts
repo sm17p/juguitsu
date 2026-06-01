@@ -45,5 +45,21 @@ export default defineConfig({
     target: process.env.TAURI_ENV_PLATFORM === "windows" ? "chrome105" : "safari13",
     minify: process.env.TAURI_ENV_DEBUG ? false : "oxc",
     sourcemap: Boolean(process.env.TAURI_ENV_DEBUG),
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return undefined;
+          const parts = id.split("node_modules/");
+          for (let index = parts.length - 1; index >= 1; index -= 1) {
+            const match = parts[index]?.match(/^(@[^/]+\/[^/]+|[^/]+)/);
+            const pkg = match?.[1];
+            if (pkg != null && pkg !== ".pnpm") {
+              return `vendor-${pkg.replace("@", "").replace("/", "-")}`;
+            }
+          }
+          return undefined;
+        },
+      },
+    },
   },
 });

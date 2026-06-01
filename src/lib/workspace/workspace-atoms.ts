@@ -42,6 +42,8 @@ export const pickAndOpenAtom = runtimeAtom.fn(
     );
     if (opened == null) return null;
     get.set(activeRepoAtom, opened);
+    const list = yield* repos.listRecents;
+    get.set(recentsAtom, Result.success(list));
     return opened;
   }),
   { reactivityKeys: ["recents"] },
@@ -58,6 +60,8 @@ export const openRecentAtom = runtimeAtom.fn(
       }),
     );
     get.set(activeRepoAtom, opened);
+    const list = yield* repos.listRecents;
+    get.set(recentsAtom, Result.success(list));
     return opened;
   }),
   { reactivityKeys: ["recents"] },

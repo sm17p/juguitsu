@@ -5,7 +5,7 @@ import SidebarSection from "./SidebarSection";
 
 export default function RepoPanel() {
   return (
-    <div className="flex flex-col gap-2 pb-1 pl-1">
+    <div className="flex flex-col gap-0">
       <SidebarSection
         emptyLabel="No bookmarks"
         icon={IconBookmark}

@@ -18,7 +18,7 @@ export default function ReviewSidebar({
   onSelectRecent,
 }: Props) {
   return (
-    <nav aria-label="Review navigation" className="flex h-full min-h-0 flex-col px-1.5 py-1">
+    <nav aria-label="Review navigation" className="flex h-full min-h-0 flex-col px-1 py-0">
       <RepoAccordion
         activePath={activeRepo?.path ?? null}
         recents={recents}
@@ -27,7 +27,7 @@ export default function ReviewSidebar({
       />
       {openError ? (
         <p
-          className="m-0 shrink-0 rounded-md bg-error-subtle px-1.5 py-1 text-[0.6875rem] text-fg-error"
+          className="m-0 shrink-0 rounded bg-error-subtle px-1 py-0.5 text-[0.6875rem] leading-tight text-fg-error"
           role="alert"
         >
           {openError}

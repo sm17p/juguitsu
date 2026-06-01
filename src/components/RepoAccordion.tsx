@@ -18,7 +18,7 @@ type Props = {
 };
 
 const triggerClass =
-  "flex h-8 min-h-8 w-full cursor-pointer items-center gap-1 rounded-md px-1.5 text-left text-xs transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring motion-reduce:transition-none";
+  "focus-kbd flex h-8 min-h-8 w-full cursor-pointer items-center gap-1.5 rounded px-1 text-left text-xs transition-colors duration-150 motion-reduce:transition-none";
 
 export default function RepoAccordion({ recents, activePath, onOpen, onSelectRecent }: Props) {
   const [expanded, setExpanded] = useState<string[]>(() =>
@@ -31,11 +31,13 @@ export default function RepoAccordion({ recents, activePath, onOpen, onSelectRec
   }, [activePath]);
 
   return (
-    <section aria-label="Repositories" className="flex min-h-0 flex-1 flex-col gap-0.5">
-      <PaneHeader>Repos</PaneHeader>
+    <section aria-label="Repositories" className="flex min-h-0 flex-1 flex-col gap-0">
+      <div className="flex items-center px-1 py-0.5">
+        <PaneHeader className="px-0 pt-0 pb-0 leading-none">Repos</PaneHeader>
+      </div>
       <div className="min-h-0 flex-1 overflow-auto">
         {recents.length === 0 ? (
-          <p className="m-0 px-1.5 py-1 text-xs text-fg-muted" role="status">
+          <p className="m-0 px-1 py-0 text-xs text-fg-muted" role="status">
             No repositories
           </p>
         ) : (
@@ -77,11 +79,7 @@ export default function RepoAccordion({ recents, activePath, onOpen, onSelectRec
           </Accordion.Root>
         )}
       </div>
-      <OpenRepoButton
-        className="mt-0.5 h-8 min-h-8 shrink-0 justify-start px-1.5"
-        compact
-        onOpen={onOpen}
-      />
+      <OpenRepoButton className="h-8 min-h-8 w-full shrink-0 justify-center px-1" onOpen={onOpen} />
     </section>
   );
 }

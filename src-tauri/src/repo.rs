@@ -9,7 +9,11 @@ use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use thiserror::Error;
 
-const RECENTS_SCHEMA_VERSION: u32 = 1;
+use crate::jj_workspace::{
+    self, GitRepoLayout, JjWorkspaceInspect, RepoEngine, RepoLinkKind, SiblingWorkspace,
+};
+
+const RECENTS_SCHEMA_VERSION: u32 = 2;
 const RECENTS_FILE: &str = "recents.json";
 const RECENTS_TMP: &str = "recents.json.tmp";
 const MAX_RECENTS: usize = 20;
@@ -24,16 +28,30 @@ enum RepoError {
     Parse(#[from] serde_json::Error),
     #[error("not a jj repository: {0}")]
     NotJjRepo(String),
-    #[error("unsupported recents schema version: {0}")]
-    UnsupportedSchema(u32),
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct RepoSummary {
     pub path: String,
     pub name: String,
     pub last_opened_at: u64,
+    pub engine: RepoEngine,
+    pub workspace_name: String,
+    pub repo_path: String,
+    pub repo_link_kind: RepoLinkKind,
+    pub commit_store: String,
+    pub op_store: String,
+    pub op_heads: String,
+    pub working_copy_store: String,
+    pub colocated: bool,
+    pub git_repo_layout: GitRepoLayout,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub opened_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub repo_path_main: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sibling_workspaces: Option<Vec<SiblingWorkspace>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,10 +87,6 @@ fn now_unix() -> u64 {
         .unwrap_or(0)
 }
 
-fn is_jj_repo(path: &Path) -> bool {
-    path.join(".jj").is_dir()
-}
-
 fn repo_name(path: &Path) -> String {
     path.file_name()
         .and_then(|name| name.to_str())
@@ -80,20 +94,48 @@ fn repo_name(path: &Path) -> String {
         .to_string()
 }
 
-fn migrate_recents_store(store: RecentsStore) -> Result<RecentsStore, RepoError> {
-    match store.schema_version {
-        RECENTS_SCHEMA_VERSION => Ok(store),
-        version => Err(RepoError::UnsupportedSchema(version)),
+fn summary_from_inspect(inspect: JjWorkspaceInspect, last_opened_at: u64) -> RepoSummary {
+    let path = inspect.workspace_root.to_string_lossy().into_owned();
+    let name = repo_name(&inspect.workspace_root);
+    let opened_path = inspect.opened_path.map(|value| value.to_string_lossy().into_owned());
+    let repo_path = inspect.repo_path.to_string_lossy().into_owned();
+    let repo_path_main = inspect
+        .repo_path_main
+        .map(|value| value.to_string_lossy().into_owned());
+    let sibling_workspaces = if inspect.sibling_workspaces.is_empty() {
+        None
+    } else {
+        Some(inspect.sibling_workspaces)
+    };
+
+    RepoSummary {
+        path,
+        name,
+        last_opened_at,
+        engine: RepoEngine::Jj,
+        workspace_name: inspect.workspace_name,
+        repo_path,
+        repo_link_kind: inspect.repo_link_kind,
+        commit_store: inspect.commit_store,
+        op_store: inspect.op_store,
+        op_heads: inspect.op_heads,
+        working_copy_store: inspect.working_copy_store,
+        colocated: inspect.colocated,
+        git_repo_layout: inspect.git_repo_layout,
+        opened_path,
+        repo_path_main,
+        sibling_workspaces,
     }
+}
+
+fn workspace_root_valid(path: &Path) -> bool {
+    path.is_dir() && path.join(".jj").is_dir()
 }
 
 fn prune_recents(recents: Vec<RepoSummary>) -> Vec<RepoSummary> {
     recents
         .into_iter()
-        .filter(|recent| {
-            let path = Path::new(&recent.path);
-            path.is_dir() && is_jj_repo(path)
-        })
+        .filter(|recent| workspace_root_valid(Path::new(&recent.path)))
         .collect()
 }
 
@@ -110,12 +152,8 @@ fn enforce_max_recents(recents: &mut Vec<RepoSummary>) {
 }
 
 fn upsert_recent(recents: &mut Vec<RepoSummary>, summary: RepoSummary) {
-    if let Some(existing) = recents
-        .iter_mut()
-        .find(|recent| recent.path == summary.path)
-    {
-        existing.name = summary.name;
-        existing.last_opened_at = summary.last_opened_at;
+    if let Some(existing) = recents.iter_mut().find(|recent| recent.path == summary.path) {
+        *existing = summary;
         return;
     }
     recents.push(summary);
@@ -131,27 +169,28 @@ fn load_recents(app: &AppHandle) -> Result<RecentsStore, RepoError> {
     }
 
     let raw = fs::read_to_string(&path)?;
-    let parsed: RecentsStore = match serde_json::from_str(&raw) {
-        Ok(store) => store,
+    let store = match serde_json::from_str::<RecentsStore>(&raw) {
+        Ok(store) if store.schema_version == RECENTS_SCHEMA_VERSION => store,
+        Ok(store) => {
+            tracing::error!(
+                version = store.schema_version,
+                "unsupported recents schema"
+            );
+            return Ok(RecentsStore::empty());
+        }
         Err(error) => {
             tracing::error!(error = %error, "failed to parse recents");
             return Ok(RecentsStore::empty());
         }
     };
 
-    let store = match migrate_recents_store(parsed) {
-        Ok(store) => store,
-        Err(error) => {
-            tracing::error!(error = %error, "unsupported recents schema");
-            return Ok(RecentsStore::empty());
-        }
-    };
-
-    let original_len = store.recents.len();
+    let before_prune = store.recents.clone();
     let mut recents = prune_recents(store.recents);
     enforce_max_recents(&mut recents);
 
-    if recents.len() != original_len {
+    let needs_save = recents != before_prune;
+
+    if needs_save {
         save_recents_store(
             app,
             &RecentsStore {
@@ -186,21 +225,23 @@ fn save_recents_store(app: &AppHandle, store: &RecentsStore) -> Result<(), RepoE
 }
 
 fn open_repo_at_path(app: &AppHandle, path: PathBuf) -> Result<RepoSummary, RepoError> {
-    if !path.is_dir() || !is_jj_repo(&path) {
-        return Err(RepoError::NotJjRepo(path.display().to_string()));
-    }
-
-    let summary = RepoSummary {
-        path: path.to_string_lossy().into_owned(),
-        name: repo_name(&path),
-        last_opened_at: now_unix(),
-    };
+    let inspect = jj_workspace::inspect_jj_workspace(&path).map_err(|error| match error {
+        jj_workspace::JjWorkspaceError::NotJjRepo(message) => RepoError::NotJjRepo(message),
+        jj_workspace::JjWorkspaceError::Io(io_error) => RepoError::Read(io_error),
+    })?;
+    let summary = summary_from_inspect(inspect, now_unix());
 
     let mut store = load_recents(app).unwrap_or_else(|_| RecentsStore::empty());
     upsert_recent(&mut store.recents, summary.clone());
     save_recents_store(app, &store)?;
 
-    tracing::info!(path = %summary.path, "opened repo");
+    tracing::info!(
+        path = %summary.path,
+        workspace_name = %summary.workspace_name,
+        commit_store = %summary.commit_store,
+        git_repo_layout = ?summary.git_repo_layout,
+        "opened repo"
+    );
     Ok(summary)
 }
 

@@ -42,6 +42,32 @@
 
 @layer base {
   body {
-    @apply m-0 overflow-hidden bg-bg font-sans text-sm leading-normal text-fg antialiased;
+    @apply m-0 overflow-hidden bg-bg font-sans text-xs leading-snug text-fg antialiased;
+  }
+}
+
+@layer utilities {
+  .focus-kbd {
+    outline: none;
+  }
+
+  .focus-kbd:focus-visible {
+    box-shadow: inset 0 0 0 1px var(--color-border);
+  }
+
+  .focus-kbd-tab {
+    outline: none;
+  }
+
+  .focus-kbd-tab:focus-visible {
+    box-shadow: inset 0 -1px 0 0 color-mix(in oklch, var(--color-fg) 38%, transparent);
+  }
+
+  .focus-kbd-pane {
+    outline: none;
+  }
+
+  .focus-kbd-pane:focus-visible {
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--color-border) 70%, var(--color-fg));
   }
 }

@@ -1,4 +1,5 @@
 mod crash_log;
+mod jj_workspace;
 mod repo;
 
 use color_eyre::eyre::Context;

@@ -17,9 +17,6 @@ importers:
       '@effect-atom/atom-react':
         specifier: ^0.5.0
         version: 0.5.0(@effect/experimental@0.60.0(@effect/platform@0.94.5(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.94.5(effect@3.21.2))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@3.21.2))(effect@3.21.2))(effect@3.21.2)(react@19.2.6)(scheduler@0.27.0)
-      '@effect/experimental':
-        specifier: ^0.60.0
-        version: 0.60.0(@effect/platform@0.94.5(effect@3.21.2))(effect@3.21.2)
       '@tauri-apps/api':
         specifier: ^2.11.0
         version: 2.11.0

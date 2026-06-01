@@ -67,14 +67,14 @@ export default function WorkbenchLayout() {
             </Splitter.Panel>
             <Splitter.ResizeTrigger
               className={cn(
-                "flex w-3 shrink-0 cursor-col-resize items-stretch justify-center border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-[-1px] focus-visible:outline-focus-ring",
+                "focus-kbd flex w-2 shrink-0 cursor-col-resize items-stretch justify-center border-0 bg-transparent p-0 motion-reduce:transition-none",
               )}
               id="review:workspace"
               aria-label="Resize review pane"
             >
               <Splitter.ResizeTriggerIndicator
                 className={cn(
-                  "w-px shrink-0 bg-border transition-colors hover:bg-accent/40 focus-visible:bg-accent data-dragging:bg-accent",
+                  "w-px shrink-0 bg-border transition-colors hover:bg-accent/40 focus-visible:bg-fg-muted/35 data-dragging:bg-accent motion-reduce:transition-none",
                 )}
               />
             </Splitter.ResizeTrigger>
@@ -87,9 +87,13 @@ export default function WorkbenchLayout() {
           <main className="flex h-full min-h-0 flex-col">
             <WorkbenchToolbar
               narrow={narrow}
+              recents={recents}
               repo={activeRepo}
               onOpen={() => {
                 void pickAndOpen();
+              }}
+              onSelectRecent={(path) => {
+                void openRecent(path);
               }}
             />
             <Splitter.Root
@@ -115,14 +119,14 @@ export default function WorkbenchLayout() {
                   </Splitter.Panel>
                   <Splitter.ResizeTrigger
                     className={cn(
-                      "flex w-3 shrink-0 cursor-col-resize items-stretch justify-center border-0 bg-transparent p-0 focus-visible:outline-2 focus-visible:outline-offset-[-1px] focus-visible:outline-focus-ring",
+                      "focus-kbd flex w-2 shrink-0 cursor-col-resize items-stretch justify-center border-0 bg-transparent p-0 motion-reduce:transition-none",
                     )}
                     id="tree:main"
                     aria-label="Resize file tree pane"
                   >
                     <Splitter.ResizeTriggerIndicator
                       className={cn(
-                        "w-px shrink-0 bg-border transition-colors hover:bg-accent/40 focus-visible:bg-accent data-dragging:bg-accent",
+                        "w-px shrink-0 bg-border transition-colors hover:bg-accent/40 focus-visible:bg-fg-muted/35 data-dragging:bg-accent motion-reduce:transition-none",
                       )}
                     />
                   </Splitter.ResizeTrigger>
