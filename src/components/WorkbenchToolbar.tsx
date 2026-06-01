@@ -12,13 +12,7 @@ type Props = {
   onSelectRecent: (path: string) => void;
 };
 
-export default function WorkbenchToolbar({
-  repo,
-  recents,
-  narrow,
-  onOpen,
-  onSelectRecent,
-}: Props) {
+export default function WorkbenchToolbar({ repo, recents, narrow, onOpen, onSelectRecent }: Props) {
   const label = repo?.name ?? "No workspace";
 
   return (
@@ -35,9 +29,7 @@ export default function WorkbenchToolbar({
       >
         {label}
       </span>
-      {narrow ? (
-        <OpenRepoButton className="ml-auto shrink-0" onOpen={onOpen} />
-      ) : null}
+      {narrow ? <OpenRepoButton className="ml-auto shrink-0" onOpen={onOpen} /> : null}
     </header>
   );
 }

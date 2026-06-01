@@ -81,8 +81,8 @@ pub fn inspect_jj_workspace(picked: &Path) -> Result<JjWorkspaceInspect, JjWorks
         RepoLinkKind::Inline => None,
     };
 
-    let commit_store = read_type_file(&repo_path.join("store").join("type"))
-        .unwrap_or_else(|| "unknown".into());
+    let commit_store =
+        read_type_file(&repo_path.join("store").join("type")).unwrap_or_else(|| "unknown".into());
     let op_store = read_type_file(&repo_path.join("op_store").join("type"))
         .unwrap_or_else(|| "unknown".into());
     let op_heads = read_type_file(&repo_path.join("op_heads").join("type"))
@@ -139,9 +139,7 @@ fn resolve_repo_dir(jj_dir: &Path) -> Result<(PathBuf, RepoLinkKind), JjWorkspac
     if repo_entry.is_dir() {
         return Ok((canonicalize_path(&repo_entry), RepoLinkKind::Inline));
     }
-    Err(JjWorkspaceError::NotJjRepo(
-        jj_dir.display().to_string(),
-    ))
+    Err(JjWorkspaceError::NotJjRepo(jj_dir.display().to_string()))
 }
 
 fn path_from_os_bytes(bytes: &[u8]) -> Option<PathBuf> {

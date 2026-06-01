@@ -97,7 +97,9 @@ fn repo_name(path: &Path) -> String {
 fn summary_from_inspect(inspect: JjWorkspaceInspect, last_opened_at: u64) -> RepoSummary {
     let path = inspect.workspace_root.to_string_lossy().into_owned();
     let name = repo_name(&inspect.workspace_root);
-    let opened_path = inspect.opened_path.map(|value| value.to_string_lossy().into_owned());
+    let opened_path = inspect
+        .opened_path
+        .map(|value| value.to_string_lossy().into_owned());
     let repo_path = inspect.repo_path.to_string_lossy().into_owned();
     let repo_path_main = inspect
         .repo_path_main
@@ -152,7 +154,10 @@ fn enforce_max_recents(recents: &mut Vec<RepoSummary>) {
 }
 
 fn upsert_recent(recents: &mut Vec<RepoSummary>, summary: RepoSummary) {
-    if let Some(existing) = recents.iter_mut().find(|recent| recent.path == summary.path) {
+    if let Some(existing) = recents
+        .iter_mut()
+        .find(|recent| recent.path == summary.path)
+    {
         *existing = summary;
         return;
     }
@@ -172,10 +177,7 @@ fn load_recents(app: &AppHandle) -> Result<RecentsStore, RepoError> {
     let store = match serde_json::from_str::<RecentsStore>(&raw) {
         Ok(store) if store.schema_version == RECENTS_SCHEMA_VERSION => store,
         Ok(store) => {
-            tracing::error!(
-                version = store.schema_version,
-                "unsupported recents schema"
-            );
+            tracing::error!(version = store.schema_version, "unsupported recents schema");
             return Ok(RecentsStore::empty());
         }
         Err(error) => {
