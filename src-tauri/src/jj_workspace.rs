@@ -1,9 +1,19 @@
 use std::{
-    ffi::OsStr,
     fs,
     path::{Path, PathBuf},
 };
 
+use jj_lib::{
+    config::{ConfigGetError, StackedConfig},
+    git_backend::GitBackend,
+    repo::{read_store_type, Repo, RepoLoaderError, StoreFactories},
+    settings::UserSettings,
+    workspace::{
+        default_working_copy_factories, DefaultWorkspaceLoaderFactory, WorkspaceLoadError,
+        WorkspaceLoader, WorkspaceLoaderFactory,
+    },
+    workspace_store::{SimpleWorkspaceStore, WorkspaceStore, WorkspaceStoreError},
+};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -12,7 +22,13 @@ pub enum JjWorkspaceError {
     #[error("not a jj repository: {0}")]
     NotJjRepo(String),
     #[error(transparent)]
-    Io(#[from] std::io::Error),
+    Load(#[from] WorkspaceLoadError),
+    #[error(transparent)]
+    Config(#[from] ConfigGetError),
+    #[error(transparent)]
+    Repo(#[from] RepoLoaderError),
+    #[error(transparent)]
+    WorkspaceStore(#[from] WorkspaceStoreError),
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -61,41 +77,47 @@ pub struct JjWorkspaceInspect {
     pub sibling_workspaces: Vec<SiblingWorkspace>,
 }
 
-pub fn inspect_jj_workspace(picked: &Path) -> Result<JjWorkspaceInspect, JjWorkspaceError> {
+pub fn is_valid_workspace_root(path: &Path) -> bool {
+    workspace_root_for(path)
+        .and_then(|root| create_loader(&root).ok())
+        .is_some()
+}
+
+pub async fn inspect_jj_workspace(picked: &Path) -> Result<JjWorkspaceInspect, JjWorkspaceError> {
     if !picked.is_dir() {
         return Err(JjWorkspaceError::NotJjRepo(picked.display().to_string()));
     }
 
-    let workspace_root = find_workspace_root(picked)
+    let workspace_root = workspace_root_for(picked)
         .ok_or_else(|| JjWorkspaceError::NotJjRepo(picked.display().to_string()))?;
-    let opened_path = if workspace_root == picked {
+    let canonical_root = canonicalize_path(&workspace_root);
+    let canonical_picked = canonicalize_path(picked);
+    let opened_path = if canonical_root == canonical_picked {
         None
     } else {
-        Some(canonicalize_path(picked))
+        Some(canonical_picked)
     };
 
-    let jj_dir = workspace_root.join(".jj");
-    let (repo_path, repo_link_kind) = resolve_repo_dir(&jj_dir)?;
-    let repo_path_main = match repo_link_kind {
-        RepoLinkKind::Pointer => Some(repo_path.clone()),
-        RepoLinkKind::Inline => None,
-    };
+    let loader = create_loader(&workspace_root)?;
+    let working_copy_store = loader
+        .get_working_copy_type()
+        .unwrap_or_else(|_| "unknown".into());
+    let workspace = load_workspace(loader.as_ref())?;
+    let repo_path = workspace.repo_path().to_path_buf();
+    let repo = workspace.repo_loader().load_at_head().await?;
+    let store = workspace.repo_loader().store();
 
-    let commit_store =
-        read_type_file(&repo_path.join("store").join("type")).unwrap_or_else(|| "unknown".into());
-    let op_store = read_type_file(&repo_path.join("op_store").join("type"))
-        .unwrap_or_else(|| "unknown".into());
-    let op_heads = read_type_file(&repo_path.join("op_heads").join("type"))
-        .unwrap_or_else(|| "unknown".into());
-    let working_copy_store = read_type_file(&jj_dir.join("working_copy").join("type"))
-        .unwrap_or_else(|| "unknown".into());
-
-    let workspace_name = read_workspace_name(&jj_dir.join("working_copy").join("checkout"));
-    let (colocated, git_repo_layout) = detect_git_layout(&workspace_root, &repo_path);
-    let sibling_workspaces = read_sibling_workspaces(&repo_path, &workspace_root);
+    let (repo_link_kind, repo_path_main) = repo_link_kind(&canonical_root, &repo_path);
+    let commit_store = store.backend().name().to_owned();
+    let op_store = read_store_type_or_unknown("operation", repo_path.join("op_store").join("type"));
+    let op_heads =
+        read_store_type_or_unknown("operation heads", repo_path.join("op_heads").join("type"));
+    let workspace_name = workspace.workspace_name().as_str().to_owned();
+    let (colocated, git_repo_layout) = git_layout_from_store(&canonical_root, &repo_path, store);
+    let sibling_workspaces = sibling_workspaces(&workspace, repo.as_ref(), &canonical_root)?;
 
     Ok(JjWorkspaceInspect {
-        workspace_root,
+        workspace_root: canonical_root,
         opened_path,
         workspace_name,
         repo_path,
@@ -111,284 +133,131 @@ pub fn inspect_jj_workspace(picked: &Path) -> Result<JjWorkspaceInspect, JjWorks
     })
 }
 
-fn find_workspace_root(mut path: &Path) -> Option<PathBuf> {
-    loop {
-        if path.join(".jj").is_dir() {
-            return Some(canonicalize_path(path));
-        }
-        path = path.parent()?;
-    }
+fn create_loader(workspace_root: &Path) -> Result<Box<dyn WorkspaceLoader>, JjWorkspaceError> {
+    DefaultWorkspaceLoaderFactory
+        .create(workspace_root)
+        .map_err(|error| match error {
+            WorkspaceLoadError::NoWorkspaceHere(path) => {
+                JjWorkspaceError::NotJjRepo(path.display().to_string())
+            }
+            other => JjWorkspaceError::Load(other),
+        })
+}
+
+fn load_workspace(
+    loader: &dyn WorkspaceLoader,
+) -> Result<jj_lib::workspace::Workspace, JjWorkspaceError> {
+    let config = StackedConfig::with_defaults();
+    let settings = UserSettings::from_config(config)?;
+    loader
+        .load(
+            &settings,
+            &StoreFactories::default(),
+            &default_working_copy_factories(),
+        )
+        .map_err(JjWorkspaceError::Load)
+}
+
+fn workspace_root_for(path: &Path) -> Option<PathBuf> {
+    path.ancestors()
+        .find(|ancestor| ancestor.join(".jj").is_dir())
+        .map(canonicalize_path)
 }
 
 fn canonicalize_path(path: &Path) -> PathBuf {
     fs::canonicalize(path).unwrap_or_else(|_| path.to_owned())
 }
 
-fn resolve_repo_dir(jj_dir: &Path) -> Result<(PathBuf, RepoLinkKind), JjWorkspaceError> {
-    let repo_entry = jj_dir.join("repo");
-    if repo_entry.is_file() {
-        let bytes = fs::read(&repo_entry)?;
-        let relative = path_from_os_bytes(&bytes)
-            .ok_or_else(|| JjWorkspaceError::NotJjRepo(jj_dir.display().to_string()))?;
-        let target = jj_dir.join(relative);
-        if !target.is_dir() {
-            return Err(JjWorkspaceError::NotJjRepo(target.display().to_string()));
-        }
-        return Ok((canonicalize_path(&target), RepoLinkKind::Pointer));
-    }
-    if repo_entry.is_dir() {
-        return Ok((canonicalize_path(&repo_entry), RepoLinkKind::Inline));
-    }
-    Err(JjWorkspaceError::NotJjRepo(jj_dir.display().to_string()))
+fn paths_equal(left: &Path, right: &Path) -> bool {
+    canonicalize_path(left) == canonicalize_path(right)
 }
 
-fn path_from_os_bytes(bytes: &[u8]) -> Option<PathBuf> {
-    #[cfg(unix)]
-    {
-        use std::os::unix::ffi::OsStrExt;
-        Some(PathBuf::from(OsStr::from_bytes(bytes)))
-    }
-    #[cfg(not(unix))]
-    {
-        let text = std::str::from_utf8(bytes).ok()?;
-        Some(PathBuf::from(text.trim()))
-    }
-}
-
-fn read_type_file(path: &Path) -> Option<String> {
-    let raw = fs::read_to_string(path).ok()?;
-    let trimmed = raw.trim();
-    if trimmed.is_empty() {
-        None
+fn repo_link_kind(
+    workspace_root: &Path,
+    resolved_repo_path: &Path,
+) -> (RepoLinkKind, Option<PathBuf>) {
+    let inline_candidate = workspace_root.join(".jj").join("repo");
+    if paths_equal(&inline_candidate, resolved_repo_path) {
+        (RepoLinkKind::Inline, None)
     } else {
-        Some(trimmed.to_owned())
+        (RepoLinkKind::Pointer, Some(resolved_repo_path.to_path_buf()))
     }
 }
 
-fn read_workspace_name(checkout_path: &Path) -> String {
-    let bytes = match fs::read(checkout_path) {
-        Ok(value) => value,
-        Err(_) => return "default".into(),
+fn read_store_type_or_unknown(store: &'static str, path: PathBuf) -> String {
+    read_store_type(store, path)
+        .map(|value| value.trim().to_owned())
+        .unwrap_or_else(|_| "unknown".into())
+}
+
+fn git_layout_from_store(
+    workspace_root: &Path,
+    repo_path: &Path,
+    store: &jj_lib::store::Store,
+) -> (bool, GitRepoLayout) {
+    let Some(git) = store.backend_impl::<GitBackend>() else {
+        return (false, GitRepoLayout::None);
     };
-    for field in [3u32, 2u32] {
-        if let Some(name) = read_proto_string_field(&bytes, field) {
-            if !name.is_empty() {
-                return name;
+
+    match git.git_workdir() {
+        Some(workdir) if paths_equal(workdir, workspace_root) => (true, GitRepoLayout::Colocated),
+        Some(_) => (false, GitRepoLayout::External),
+        None => {
+            let hidden_git = repo_path.join("store").join("git");
+            if paths_equal(git.git_repo_path(), &hidden_git) {
+                (false, GitRepoLayout::Hidden)
+            } else {
+                (false, GitRepoLayout::External)
             }
         }
     }
-    "default".into()
 }
 
-fn read_proto_string_field(data: &[u8], field_number: u32) -> Option<String> {
-    let key = u8::try_from((field_number << 3) | 2).ok()?;
-    let mut offset = 0usize;
-    while offset < data.len() {
-        if data[offset] != key {
-            let skipped = skip_proto_field(&data[offset..])?;
-            offset += skipped;
+fn sibling_workspaces(
+    workspace: &jj_lib::workspace::Workspace,
+    repo: &dyn Repo,
+    workspace_root: &Path,
+) -> Result<Vec<SiblingWorkspace>, JjWorkspaceError> {
+    let workspace_store = SimpleWorkspaceStore::load(workspace.repo_path())?;
+    let current = workspace.workspace_name();
+    let mut siblings = Vec::new();
+
+    for name in repo.view().wc_commit_ids().keys() {
+        if name.as_str() == current.as_str() {
             continue;
         }
-        offset += 1;
-        let (length, consumed) = read_varint(&data[offset..])?;
-        offset += consumed;
-        let end = offset + length as usize;
-        if end > data.len() {
-            return None;
-        }
-        let text = std::str::from_utf8(&data[offset..end]).ok()?;
-        return Some(text.to_owned());
-    }
-    None
-}
-
-fn skip_proto_field(data: &[u8]) -> Option<usize> {
-    if data.is_empty() {
-        return None;
-    }
-    let tag = data[0];
-    let wire_type = tag & 0x07;
-    let mut offset = 1usize;
-    match wire_type {
-        0 => {
-            let (_, consumed) = read_varint(&data[offset..])?;
-            offset += consumed;
-        }
-        1 => offset += 8,
-        2 => {
-            let (length, consumed) = read_varint(&data[offset..])?;
-            offset += consumed + length as usize;
-        }
-        5 => offset += 4,
-        _ => return None,
-    }
-    Some(offset)
-}
-
-fn read_varint(data: &[u8]) -> Option<(u64, usize)> {
-    let mut result = 0u64;
-    let mut shift = 0u32;
-    for (index, byte) in data.iter().enumerate() {
-        let value = (byte & 0x7f) as u64;
-        result |= value << shift;
-        if byte & 0x80 == 0 {
-            return Some((result, index + 1));
-        }
-        shift += 7;
-        if shift > 63 {
-            return None;
-        }
-    }
-    None
-}
-
-fn detect_git_layout(workspace_root: &Path, repo_path: &Path) -> (bool, GitRepoLayout) {
-    let store_path = repo_path.join("store");
-    if workspace_root.join(".git").exists() {
-        return (true, GitRepoLayout::Colocated);
-    }
-    if store_path.join("git").is_dir() {
-        return (false, GitRepoLayout::Hidden);
-    }
-    let git_target = store_path.join("git_target");
-    if git_target.is_file() {
-        if let Ok(bytes) = fs::read(&git_target) {
-            if let Some(relative) = path_from_os_bytes(&bytes) {
-                let resolved = canonicalize_path(&store_path.join(relative));
-                if resolved.exists() {
-                    if resolved == canonicalize_path(&workspace_root.join(".git")) {
-                        return (false, GitRepoLayout::Colocated);
-                    }
-                    return (false, GitRepoLayout::External);
-                }
-            }
-        }
-    }
-    (false, GitRepoLayout::None)
-}
-
-fn read_sibling_workspaces(repo_path: &Path, workspace_root: &Path) -> Vec<SiblingWorkspace> {
-    let index_path = repo_path.join("workspace_store").join("index");
-    let bytes = match fs::read(&index_path) {
-        Ok(value) => value,
-        Err(_) => return Vec::new(),
-    };
-    let entries = parse_workspace_store_index(&bytes);
-    entries
-        .into_iter()
-        .filter_map(|(name, relative)| {
-            let absolute = canonicalize_path(&repo_path.join(&relative));
-            if absolute == workspace_root {
-                return None;
-            }
-            Some(SiblingWorkspace {
-                name,
-                path: absolute.to_string_lossy().into_owned(),
-            })
-        })
-        .collect()
-}
-
-fn parse_workspace_store_index(data: &[u8]) -> Vec<(String, PathBuf)> {
-    let mut entries = Vec::new();
-    let mut offset = 0usize;
-    while offset < data.len() {
-        if data[offset] != 0x0a {
-            let skipped = match skip_proto_field(&data[offset..]) {
-                Some(value) => value,
-                None => break,
-            };
-            offset += skipped;
+        let Some(relative) = workspace_store.get_workspace_path(name.as_ref())? else {
             continue;
-        }
-        offset += 1;
-        let (length, consumed) = match read_varint(&data[offset..]) {
-            Some(value) => value,
-            None => break,
         };
-        offset += consumed;
-        let end = offset + length as usize;
-        if end > data.len() {
-            break;
-        }
-        if let Some((name, relative)) = parse_workspace_entry(&data[offset..end]) {
-            entries.push((name, relative));
-        }
-        offset = end;
-    }
-    entries
-}
-
-fn parse_workspace_entry(data: &[u8]) -> Option<(String, PathBuf)> {
-    let name = read_proto_string_field(data, 1)?;
-    let relative_bytes = read_proto_bytes_field(data, 2)?;
-    let relative = path_from_os_bytes(&relative_bytes)?;
-    Some((name, relative))
-}
-
-fn read_proto_bytes_field(data: &[u8], field_number: u32) -> Option<Vec<u8>> {
-    let key = u8::try_from((field_number << 3) | 2).ok()?;
-    let mut offset = 0usize;
-    while offset < data.len() {
-        if data[offset] != key {
-            let skipped = skip_proto_field(&data[offset..])?;
-            offset += skipped;
+        let absolute = canonicalize_path(&workspace.repo_path().join(relative));
+        if absolute == workspace_root {
             continue;
         }
-        offset += 1;
-        let (length, consumed) = read_varint(&data[offset..])?;
-        offset += consumed;
-        let end = offset + length as usize;
-        if end > data.len() {
-            return None;
-        }
-        return Some(data[offset..end].to_vec());
+        siblings.push(SiblingWorkspace {
+            name: name.as_str().to_string(),
+            path: absolute.to_string_lossy().into_owned(),
+        });
     }
-    None
+
+    Ok(siblings)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn parses_workspace_name_from_checkout() {
-        let bytes = [
-            0x12, 0x40, 0x6c, 0xb1, 0xe1, 0x4d, 0x08, 0x01, 0x46, 0x0d, 0x14, 0x2f, 0x5d, 0x1b,
-            0xd2, 0x70, 0xcc, 0xc6, 0x51, 0x1c, 0xdb, 0xd4, 0xbe, 0xc3, 0x25, 0x3b, 0x00, 0xfe,
-            0x9a, 0xb0, 0x29, 0x79, 0x64, 0x36, 0x5b, 0x86, 0x38, 0x39, 0x9f, 0x1e, 0x25, 0x2e,
-            0xb4, 0x80, 0x18, 0x0a, 0x62, 0x13, 0xfb, 0xfb, 0xcc, 0x7e, 0x05, 0x40, 0x1c, 0x3d,
-            0x4e, 0x9f, 0xce, 0x07, 0xd6, 0xc4, 0xa6, 0x49, 0x4a, 0xe3, 0x1a, 0x07, 0x64, 0x65,
-            0x66, 0x61, 0x75, 0x6c, 0x74,
-        ];
-        assert_eq!(
-            read_proto_string_field(&bytes, 3).as_deref(),
-            Some("default")
-        );
-    }
-
-    #[test]
-    fn inspects_fixture_workspace_when_present() {
+    #[tokio::test]
+    async fn inspects_fixture_workspace_when_present() {
         let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..");
         if !root.join(".jj").is_dir() {
             return;
         }
-        let inspect = inspect_jj_workspace(&root).expect("fixture workspace");
+        let inspect = inspect_jj_workspace(&root)
+            .await
+            .expect("fixture workspace");
         assert_eq!(inspect.commit_store, "git");
         assert_eq!(inspect.workspace_name, "default");
         assert_eq!(inspect.git_repo_layout, GitRepoLayout::Colocated);
         assert!(inspect.colocated);
-    }
-
-    #[test]
-    fn parses_workspace_store_index() {
-        let data = [
-            0x0a, 0x11, 0x0a, 0x07, 0x64, 0x65, 0x66, 0x61, 0x75, 0x6c, 0x74, 0x12, 0x06, 0x2e,
-            0x2e, 0x2f, 0x2e, 0x2e, 0x2f,
-        ];
-        let entries = parse_workspace_store_index(&data);
-        assert_eq!(entries.len(), 1);
-        assert_eq!(entries[0].0, "default");
-        assert_eq!(entries[0].1, PathBuf::from("../.."));
     }
 }

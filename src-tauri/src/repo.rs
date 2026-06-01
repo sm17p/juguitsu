@@ -131,7 +131,7 @@ fn summary_from_inspect(inspect: JjWorkspaceInspect, last_opened_at: u64) -> Rep
 }
 
 fn workspace_root_valid(path: &Path) -> bool {
-    path.is_dir() && path.join(".jj").is_dir()
+    jj_workspace::is_valid_workspace_root(path)
 }
 
 fn prune_recents(recents: Vec<RepoSummary>) -> Vec<RepoSummary> {
@@ -226,16 +226,18 @@ fn save_recents_store(app: &AppHandle, store: &RecentsStore) -> Result<(), RepoE
     Ok(())
 }
 
-fn open_repo_at_path(app: &AppHandle, path: PathBuf) -> Result<RepoSummary, RepoError> {
-    let inspect = jj_workspace::inspect_jj_workspace(&path).map_err(|error| match error {
-        jj_workspace::JjWorkspaceError::NotJjRepo(message) => RepoError::NotJjRepo(message),
-        jj_workspace::JjWorkspaceError::Io(io_error) => RepoError::Read(io_error),
-    })?;
+fn open_repo_at_sync(app: AppHandle, path: PathBuf) -> Result<RepoSummary, RepoError> {
+    let inspect = futures::executor::block_on(jj_workspace::inspect_jj_workspace(&path)).map_err(
+        |error| match error {
+            jj_workspace::JjWorkspaceError::NotJjRepo(message) => RepoError::NotJjRepo(message),
+            other => RepoError::NotJjRepo(other.to_string()),
+        },
+    )?;
     let summary = summary_from_inspect(inspect, now_unix());
 
-    let mut store = load_recents(app).unwrap_or_else(|_| RecentsStore::empty());
+    let mut store = load_recents(&app).unwrap_or_else(|_| RecentsStore::empty());
     upsert_recent(&mut store.recents, summary.clone());
-    save_recents_store(app, &store)?;
+    save_recents_store(&app, &store)?;
 
     tracing::info!(
         path = %summary.path,
@@ -255,9 +257,12 @@ pub fn list_recent_repos(app: AppHandle) -> Result<Vec<RepoSummary>, String> {
 }
 
 #[tauri::command]
-pub fn open_repo_at(app: AppHandle, path: String) -> Result<RepoSummary, String> {
-    open_repo_at_path(&app, PathBuf::from(path)).map_err(|error| {
-        tracing::error!(error = %error, "failed to open repo");
-        error.to_string()
-    })
+pub async fn open_repo_at(app: AppHandle, path: String) -> Result<RepoSummary, String> {
+    tauri::async_runtime::spawn_blocking(move || open_repo_at_sync(app, PathBuf::from(path)))
+        .await
+        .map_err(|join_error| join_error.to_string())?
+        .map_err(|error| {
+            tracing::error!(error = %error, "failed to open repo");
+            error.to_string()
+        })
 }

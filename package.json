@@ -14,7 +14,8 @@
     "fmt": "oxfmt . && cargo fmt --manifest-path src-tauri/Cargo.toml",
     "fmt:check": "oxfmt --check . && cargo fmt --manifest-path src-tauri/Cargo.toml --check",
     "agentation:mcp": "pnpm exec agentation-mcp server",
-    "agentation:doctor": "pnpm exec agentation-mcp doctor"
+    "agentation:doctor": "pnpm exec agentation-mcp doctor",
+    "prepare": "effect-language-service patch"
   },
   "dependencies": {
     "@ark-ui/react": "^5.37.0",
@@ -32,6 +33,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@effect/language-service": "^0.86.2",
     "@iconify-json/tabler": "^1.2.35",
     "@svgr/core": "^8.1.0",
     "@svgr/plugin-jsx": "^8.1.0",
