@@ -1,35 +1,73 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #f6f6f6;
-  --color-bg-subtle: #ebebeb;
-  --color-fg: #0f0f0f;
-  --color-fg-muted: #525252;
-  --color-accent: #2563eb;
-  --color-accent-subtle: #dbeafe;
-  --color-accent-fg: #1d4ed8;
-  --color-focus-ring: #93c5fd;
-  --color-border: #d4d4d4;
+  --color-bg: oklch(97.5% 0.008 250);
+  --color-bg-subtle: oklch(94.5% 0.012 250);
+  --color-fg: oklch(18% 0.02 250);
+  --color-fg-muted: oklch(48% 0.025 250);
+  --color-accent: oklch(52% 0.17 255);
+  --color-accent-subtle: oklch(94% 0.045 255);
+  --color-accent-fg: oklch(44% 0.15 255);
+  --color-focus-ring: oklch(72% 0.12 255);
+  --color-border: oklch(87% 0.018 250);
+  --color-bookmark: oklch(58% 0.14 70);
+  --color-query: oklch(52% 0.11 295);
+  --color-success: oklch(48% 0.12 155);
+  --color-success-subtle: oklch(95% 0.04 155);
+  --color-fg-error: oklch(48% 0.17 25);
+  --color-error-subtle: oklch(96% 0.035 25);
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
 }
 
 @media (prefers-color-scheme: dark) {
   @theme {
-    --color-bg: #1a1a1a;
-    --color-bg-subtle: #262626;
-    --color-fg: #f6f6f6;
-    --color-fg-muted: #a3a3a3;
-    --color-accent: #3b82f6;
-    --color-accent-subtle: #1e3a5f;
-    --color-accent-fg: #93c5fd;
-    --color-focus-ring: #60a5fa;
-    --color-border: #404040;
+    --color-bg: oklch(22% 0.018 250);
+    --color-bg-subtle: oklch(28% 0.022 250);
+    --color-fg: oklch(96% 0.01 250);
+    --color-fg-muted: oklch(68% 0.02 250);
+    --color-accent: oklch(68% 0.16 255);
+    --color-accent-subtle: oklch(32% 0.06 255);
+    --color-accent-fg: oklch(78% 0.12 255);
+    --color-focus-ring: oklch(72% 0.14 255);
+    --color-border: oklch(36% 0.025 250);
+    --color-bookmark: oklch(78% 0.12 75);
+    --color-query: oklch(74% 0.1 295);
+    --color-success: oklch(72% 0.11 155);
+    --color-success-subtle: oklch(28% 0.04 155);
+    --color-fg-error: oklch(78% 0.14 25);
+    --color-error-subtle: oklch(28% 0.05 25);
   }
 }
 
 @layer base {
   body {
-    @apply m-0 overflow-hidden bg-bg font-sans text-sm leading-normal text-fg antialiased;
+    @apply m-0 overflow-hidden bg-bg font-sans text-xs leading-snug text-fg antialiased;
+  }
+}
+
+@layer utilities {
+  .focus-kbd {
+    outline: none;
+  }
+
+  .focus-kbd:focus-visible {
+    box-shadow: inset 0 0 0 1px var(--color-border);
+  }
+
+  .focus-kbd-tab {
+    outline: none;
+  }
+
+  .focus-kbd-tab:focus-visible {
+    box-shadow: inset 0 -1px 0 0 color-mix(in oklch, var(--color-fg) 38%, transparent);
+  }
+
+  .focus-kbd-pane {
+    outline: none;
+  }
+
+  .focus-kbd-pane:focus-visible {
+    box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--color-border) 70%, var(--color-fg));
   }
 }
