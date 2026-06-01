@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { Context, Data, Effect, Layer } from "effect";
 
-import type { RepoSummary } from "./repo-summary";
+import type { RepoSummary } from "@/lib/workspace/repo-summary";
 
 export class RepoCommandError extends Data.TaggedError("RepoCommandError")<{
   message: string;

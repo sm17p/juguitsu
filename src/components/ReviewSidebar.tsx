@@ -1,6 +1,6 @@
 import type { RepoSummary } from "@/lib/use-workspace";
 
-import RepoAccordion from "./RepoAccordion";
+import RepoAccordion from "@/components/RepoAccordion";
 
 type Props = {
   recents: readonly RepoSummary[];

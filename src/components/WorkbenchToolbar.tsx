@@ -1,8 +1,8 @@
 import cn from "@/lib/cn";
 import type { RepoSummary } from "@/lib/use-workspace";
 
-import NarrowRecentsMenu from "./NarrowRecentsMenu";
-import OpenRepoButton from "./OpenRepoButton";
+import NarrowRecentsMenu from "@/components/NarrowRecentsMenu";
+import OpenRepoButton from "@/components/OpenRepoButton";
 
 type Props = {
   repo: RepoSummary | null;

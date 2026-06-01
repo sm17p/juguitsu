@@ -6,10 +6,10 @@ import useMediaNarrow from "@/lib/use-media-narrow";
 import useOpenRepoShortcut from "@/lib/use-open-repo-shortcut";
 import useWorkspace from "@/lib/use-workspace";
 
-import AppTabs from "./AppTabs";
-import PaneHeader from "./PaneHeader";
-import ReviewSidebar from "./ReviewSidebar";
-import WorkbenchToolbar from "./WorkbenchToolbar";
+import AppTabs from "@/components/AppTabs";
+import PaneHeader from "@/components/PaneHeader";
+import ReviewSidebar from "@/components/ReviewSidebar";
+import WorkbenchToolbar from "@/components/WorkbenchToolbar";
 
 export default function WorkbenchLayout() {
   const narrow = useMediaNarrow();

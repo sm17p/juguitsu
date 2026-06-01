@@ -14,9 +14,9 @@ import {
   openRecentAtom,
   pickAndOpenAtom,
   recentsAtom,
-} from "./workspace/workspace-atoms";
+} from "@/lib/workspace/workspace-atoms";
 
-export type { RepoSummary } from "./workspace/repo-summary";
+export type { RepoSummary } from "@/lib/workspace/repo-summary";
 
 export default function useWorkspace() {
   useAtomMount(recentsAtom);

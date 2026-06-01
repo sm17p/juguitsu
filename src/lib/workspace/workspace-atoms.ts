@@ -1,8 +1,8 @@
 import { Atom, Result } from "@effect-atom/atom-react";
 import { Effect } from "effect";
 
-import { RepoService, RepoServiceLive } from "./repo-service";
-import type { RepoSummary } from "./repo-summary";
+import { RepoService, RepoServiceLive } from "@/lib/workspace/repo-service";
+import type { RepoSummary } from "@/lib/workspace/repo-summary";
 
 const runtimeAtom = Atom.runtime(RepoServiceLive);
 

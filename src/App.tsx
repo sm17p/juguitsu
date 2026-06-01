@@ -1,7 +1,7 @@
 import { RegistryProvider } from "@effect-atom/atom-react";
 
-import DevAgentation from "./components/DevAgentation";
-import WorkbenchLayout from "./components/WorkbenchLayout";
+import DevAgentation from "@/components/DevAgentation";
+import WorkbenchLayout from "@/components/WorkbenchLayout";
 
 export default function App() {
   return (

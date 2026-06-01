@@ -6,9 +6,9 @@ import IconFolder from "~icons/tabler/folder";
 import cn from "@/lib/cn";
 import type { RepoSummary } from "@/lib/use-workspace";
 
-import OpenRepoButton from "./OpenRepoButton";
-import PaneHeader from "./PaneHeader";
-import RepoPanel from "./RepoPanel";
+import OpenRepoButton from "@/components/OpenRepoButton";
+import PaneHeader from "@/components/PaneHeader";
+import RepoPanel from "@/components/RepoPanel";
 
 type Props = {
   recents: readonly RepoSummary[];

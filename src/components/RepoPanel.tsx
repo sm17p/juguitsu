@@ -1,7 +1,7 @@
 import IconBookmark from "~icons/tabler/bookmark";
 import IconGitCompare from "~icons/tabler/git-compare";
 
-import SidebarSection from "./SidebarSection";
+import SidebarSection from "@/components/SidebarSection";
 
 export default function RepoPanel() {
   return (

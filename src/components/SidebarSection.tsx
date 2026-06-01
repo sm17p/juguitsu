@@ -2,7 +2,7 @@ import type { ComponentType, ReactNode, SVGProps } from "react";
 
 import cn from "@/lib/cn";
 
-import PaneHeader from "./PaneHeader";
+import PaneHeader from "@/components/PaneHeader";
 
 type IconProps = SVGProps<SVGSVGElement>;
 

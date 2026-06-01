@@ -3,8 +3,8 @@ import { createRoot } from "react-dom/client";
 
 import { initCrashLogger } from "@/lib/crash-logger";
 
-import App from "./App";
-import ErrorBoundary from "./components/ErrorBoundary";
+import App from "@/App";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 import "./index.css";
 
