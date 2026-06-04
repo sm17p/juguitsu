@@ -24,30 +24,29 @@ const invokeCommand = <A>(command: string, args?: Record<string, unknown>) =>
     catch: toRepoCommandError,
   });
 
-const pickFolder = Effect.tryPromise({
-  try: () => open({ directory: true, multiple: false }),
-  catch: toRepoCommandError,
-});
-
 export class RepoService extends Context.Tag("@juguitsu/RepoService")<
   RepoService,
   {
     readonly listRecents: Effect.Effect<readonly RepoSummary[], RepoCommandError>;
-    readonly openAt: (path: string) => Effect.Effect<RepoSummary, RepoCommandError>;
+    readonly openAt: (workspaceRoot: string) => Effect.Effect<RepoSummary, RepoCommandError>;
     readonly pickAndOpen: Effect.Effect<RepoSummary | null, RepoCommandError>;
   }
 >() {}
 
 export const RepoServiceLive = Layer.succeed(RepoService, {
   listRecents: invokeCommand<RepoSummary[]>("list_recent_repos"),
-  openAt: (path) => invokeCommand<RepoSummary>("open_repo_at", { path }),
+  openAt: (workspaceRoot) =>
+    invokeCommand<RepoSummary>("open_repo_at", { path: workspaceRoot }),
   pickAndOpen: Effect.gen(function* () {
-    const selected = yield* pickFolder;
+    const selected = yield* Effect.tryPromise({
+      try: () => open({ directory: true, multiple: false }),
+      catch: toRepoCommandError,
+    });
     if (selected == null) return null;
 
-    const path = typeof selected === "string" ? selected : selected[0];
-    if (path == null) return null;
+    const workspaceRoot = typeof selected === "string" ? selected : selected[0];
+    if (workspaceRoot == null) return null;
 
-    return yield* invokeCommand<RepoSummary>("open_repo_at", { path });
+    return yield* invokeCommand<RepoSummary>("open_repo_at", { path: workspaceRoot });
   }),
 });

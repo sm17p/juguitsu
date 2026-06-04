@@ -1,0 +1,55 @@
+---
+description: Rust/Tauri conventions — clippy, naming, when to extract helpers
+globs: src-tauri/**/*
+alwaysApply: false
+---
+
+# Rust (`src-tauri`)
+
+Run `pnpm lint` (oxlint + `cargo clippy -D warnings`) before finishing Rust changes.
+
+## Extract vs inline
+
+Extract a private `fn` only when:
+
+- **2+ call sites** in the crate or module, or
+- A **required boundary** (`#[tauri::command]`, public API)
+
+**Single caller → inline** (including large blocks and domain-named helpers).
+
+Do **not** extract when:
+
+- The body is a **one-line passthrough** to an existing named API — call the API directly
+- The name is vague (`process`, `handle`, `do_thing`)
+
+**Single-use `let` → inline** into the consuming expression or struct literal.
+
+Keep a `let` only when:
+
+- Used **2+ times**, or
+- **`before_prune`-style** before/after comparison, or
+- **Borrow splitting** / ordering requires it
+
+## Naming (jj vocabulary)
+
+Match [jj](https://jj-vcs.github.io/jj/latest/) terms in variables and serialized fields:
+
+- `workspace_root` — directory containing `.jj` (not generic `path` / `root`)
+- `workspace_name` — named workspace in the repo’s workspace store
+- `cwd_path` — path the user opened when it differs from `workspace_root`
+- `repo_path` — jj repo store path (`.jj/repo` or pointer target)
+- `pointer_repo_path` — external repo store when link kind is pointer
+- `colocated` — git workdir matches workspace root
+- `working_copy_store`, `commit_store`, `op_store`, `op_heads` — store backends
+- `workspace_loader`, `loaded_workspace`, `jj_repo`, `repo_store` — jj-lib objects
+- `sibling_workspaces` — other workspace roots sharing the same repo
+
+- **Verbs** for work; **nouns** for accessors
+- Prefer shorthand initialization where it stays clear
+
+## Lints (Cargo `[lints]`)
+
+- `unused = "deny"`, `unsafe_code = "forbid"`
+- `clippy::all` plus `redundant_closure`, `unnecessary_wraps`, `let_and_return`, `unused_self`
+
+No type assertions in TypeScript; Rust side avoids `unsafe` unless explicitly reviewed.

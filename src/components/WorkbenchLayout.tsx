@@ -17,9 +17,7 @@ export default function WorkbenchLayout() {
   const [outerSize, setOuterSize] = useState<number[]>([18, 82]);
   const [innerSize, setInnerSize] = useState<number[]>([28, 72]);
 
-  useOpenRepoShortcut(() => {
-    void pickAndOpen();
-  });
+  useOpenRepoShortcut(pickAndOpen);
 
   useEffect(() => {
     if (narrow) {
@@ -57,12 +55,8 @@ export default function WorkbenchLayout() {
                 activeRepo={activeRepo}
                 openError={openError}
                 recents={recents}
-                onOpen={() => {
-                  void pickAndOpen();
-                }}
-                onSelectRecent={(path) => {
-                  void openRecent(path);
-                }}
+                onOpen={pickAndOpen}
+                onSelectRecent={openRecent}
               />
             </Splitter.Panel>
             <Splitter.ResizeTrigger
@@ -89,12 +83,8 @@ export default function WorkbenchLayout() {
               narrow={narrow}
               recents={recents}
               repo={activeRepo}
-              onOpen={() => {
-                void pickAndOpen();
-              }}
-              onSelectRecent={(path) => {
-                void openRecent(path);
-              }}
+              onOpen={pickAndOpen}
+              onSelectRecent={openRecent}
             />
             <Splitter.Root
               className="flex min-h-0 flex-1"

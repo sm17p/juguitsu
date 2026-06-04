@@ -31,8 +31,6 @@ export default function SidebarSection({
   iconTone = "muted",
   children,
 }: Props) {
-  const empty = children == null;
-
   return (
     <section className="flex flex-col gap-0">
       <div className={headerRowClass}>
@@ -41,7 +39,7 @@ export default function SidebarSection({
         ) : null}
         <PaneHeader className="px-0 pt-0 pb-0 leading-none">{title}</PaneHeader>
       </div>
-      {empty ? (
+      {children == null ? (
         <p className={emptyCopyClass} role="status">
           {emptyLabel}
         </p>
@@ -49,31 +47,5 @@ export default function SidebarSection({
         <ul className="m-0 flex list-none flex-col gap-px p-0">{children}</ul>
       )}
     </section>
-  );
-}
-
-type RowProps = {
-  label: string;
-  selected?: boolean;
-  onSelect: () => void;
-};
-
-export function SidebarRow({ label, selected = false, onSelect }: RowProps) {
-  return (
-    <li>
-      <button
-        type="button"
-        aria-current={selected ? "true" : undefined}
-        className={cn(
-          "focus-kbd flex h-8 min-h-8 w-full cursor-pointer items-center rounded px-1 text-left text-xs transition-colors duration-150 motion-reduce:transition-none",
-          selected
-            ? "bg-accent-subtle font-medium text-fg"
-            : "text-fg-muted hover:bg-bg-subtle hover:text-fg",
-        )}
-        onClick={onSelect}
-      >
-        <span className="truncate">{label}</span>
-      </button>
-    </li>
   );
 }

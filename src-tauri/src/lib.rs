@@ -28,7 +28,7 @@ pub fn run() {
                 .format(|out, message, record| {
                     out.finish(format_args!(
                         "[{}] [{}] [{}] {message}",
-                        crash_log::now_zoned(),
+                        jiff::Zoned::now(),
                         record.level(),
                         record.target(),
                     ))
@@ -38,9 +38,9 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            let log_dir =
-                crash_log::resolve_log_dir(app.handle()).context("failed to resolve log dir")?;
-            crash_log::install_panic_hook(log_dir);
+            crash_log::install_panic_hook(
+                crash_log::resolve_log_dir(app.handle()).context("failed to resolve log dir")?,
+            );
 
             tracing::info!("juguitsu started");
             Ok(())

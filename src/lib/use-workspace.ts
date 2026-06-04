@@ -5,7 +5,6 @@ import {
   useAtomSubscribe,
   useAtomValue,
 } from "@effect-atom/atom-react";
-import { useCallback } from "react";
 
 import {
   activeRepoAtom,
@@ -34,17 +33,16 @@ export default function useWorkspace() {
   );
 
   const recentsResult = useAtomValue(recentsAtom);
-  const recents = Result.isSuccess(recentsResult) ? recentsResult.value : [];
-
   const activeRepo = useAtomValue(activeRepoAtom);
   const openError = useAtomValue(openErrorAtom);
-
   const runPickAndOpen = useAtomSet(pickAndOpenAtom, { mode: "promiseExit" });
   const runOpenRecent = useAtomSet(openRecentAtom, { mode: "promiseExit" });
 
-  const pickAndOpen = useCallback(() => runPickAndOpen(undefined), [runPickAndOpen]);
-
-  const openRecent = useCallback((path: string) => runOpenRecent(path), [runOpenRecent]);
-
-  return { recents, activeRepo, openError, pickAndOpen, openRecent };
+  return {
+    recents: Result.isSuccess(recentsResult) ? recentsResult.value : [],
+    activeRepo,
+    openError,
+    pickAndOpen: () => void runPickAndOpen(undefined),
+    openRecent: (workspaceRoot: string) => void runOpenRecent(workspaceRoot),
+  };
 }
