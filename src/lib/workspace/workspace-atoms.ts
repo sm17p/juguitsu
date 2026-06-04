@@ -24,10 +24,12 @@ export const hydrateActiveAtom = Atom.fnSync((_: void, get) => {
   if (!Result.isSuccess(recentsResult)) return;
   const active = get(activeRepoAtom);
   if (active != null || recentsResult.value.length === 0) return;
-  const mostRecent = recentsResult.value.reduce((best, repo) =>
-    repo.last_opened_at > best.last_opened_at ? repo : best,
+  get.set(
+    activeRepoAtom,
+    recentsResult.value.reduce((latest, workspaceSummary) =>
+      workspaceSummary.last_opened_at > latest.last_opened_at ? workspaceSummary : latest,
+    ),
   );
-  get.set(activeRepoAtom, mostRecent);
 });
 
 export const pickAndOpenAtom = runtimeAtom.fn(
@@ -42,26 +44,24 @@ export const pickAndOpenAtom = runtimeAtom.fn(
     );
     if (opened == null) return null;
     get.set(activeRepoAtom, opened);
-    const list = yield* repos.listRecents;
-    get.set(recentsAtom, Result.success(list));
+    get.set(recentsAtom, Result.success(yield* repos.listRecents));
     return opened;
   }),
   { reactivityKeys: ["recents"] },
 );
 
 export const openRecentAtom = runtimeAtom.fn(
-  Effect.fn(function* (path: string, get) {
+  Effect.fn(function* (workspaceRoot: string, get) {
     get.set(openErrorAtom, null);
     const repos = yield* RepoService;
-    const opened = yield* repos.openAt(path).pipe(
+    const opened = yield* repos.openAt(workspaceRoot).pipe(
       Effect.catchTag("RepoCommandError", (error) => {
         get.set(openErrorAtom, error.message);
         return Effect.fail(error);
       }),
     );
     get.set(activeRepoAtom, opened);
-    const list = yield* repos.listRecents;
-    get.set(recentsAtom, Result.success(list));
+    get.set(recentsAtom, Result.success(yield* repos.listRecents));
     return opened;
   }),
   { reactivityKeys: ["recents"] },

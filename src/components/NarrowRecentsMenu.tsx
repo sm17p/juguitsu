@@ -6,14 +6,18 @@ import type { RepoSummary } from "@/lib/use-workspace";
 
 type Props = {
   recents: readonly RepoSummary[];
-  activePath: string | null;
-  onSelectRecent: (path: string) => void;
+  activeWorkspaceRoot: string | null;
+  onSelectRecent: (workspaceRoot: string) => void;
 };
 
 const itemClass =
   "focus-kbd flex h-8 min-h-8 cursor-pointer items-center rounded px-1.5 text-left text-xs outline-none transition-colors duration-150 data-highlighted:bg-bg-subtle motion-reduce:transition-none";
 
-export default function NarrowRecentsMenu({ recents, activePath, onSelectRecent }: Props) {
+export default function NarrowRecentsMenu({
+  recents,
+  activeWorkspaceRoot,
+  onSelectRecent,
+}: Props) {
   return (
     <Menu.Root>
       <Menu.Trigger
@@ -38,16 +42,16 @@ export default function NarrowRecentsMenu({ recents, activePath, onSelectRecent 
             </p>
           ) : (
             recents.map((recent) => {
-              const active = recent.path === activePath;
+              const active = recent.workspace_root === activeWorkspaceRoot;
               return (
                 <Menu.Item
-                  key={recent.path}
+                  key={recent.workspace_root}
                   className={cn(
                     itemClass,
                     active ? "bg-accent-subtle font-medium text-fg" : "text-fg-muted",
                   )}
-                  value={recent.path}
-                  onSelect={() => onSelectRecent(recent.path)}
+                  value={recent.workspace_root}
+                  onSelect={() => onSelectRecent(recent.workspace_root)}
                 >
                   <span className="truncate">{recent.name}</span>
                 </Menu.Item>

@@ -7,7 +7,7 @@ type Props = {
   activeRepo: RepoSummary | null;
   openError: string | null;
   onOpen: () => void;
-  onSelectRecent: (path: string) => void;
+  onSelectRecent: (workspaceRoot: string) => void;
 };
 
 export default function ReviewSidebar({
@@ -20,7 +20,7 @@ export default function ReviewSidebar({
   return (
     <nav aria-label="Review navigation" className="flex h-full min-h-0 flex-col px-1 py-0">
       <RepoAccordion
-        activePath={activeRepo?.path ?? null}
+        activeWorkspaceRoot={activeRepo?.workspace_root ?? null}
         recents={recents}
         onOpen={onOpen}
         onSelectRecent={onSelectRecent}

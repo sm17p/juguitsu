@@ -5,12 +5,12 @@ export type RepoLinkKind = "inline" | "pointer";
 export type GitRepoLayout = "colocated" | "hidden" | "external" | "none";
 
 export type SiblingWorkspace = {
-  name: string;
-  path: string;
+  workspace_name: string;
+  workspace_root: string;
 };
 
 export type RepoSummary = {
-  path: string;
+  workspace_root: string;
   name: string;
   last_opened_at: number;
   engine: RepoEngine;
@@ -23,7 +23,7 @@ export type RepoSummary = {
   working_copy_store: string;
   colocated: boolean;
   git_repo_layout: GitRepoLayout;
-  opened_path?: string;
-  repo_path_main?: string;
+  cwd_path?: string;
+  pointer_repo_path?: string;
   sibling_workspaces?: SiblingWorkspace[];
 };

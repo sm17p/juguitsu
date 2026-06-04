@@ -1,0 +1,46 @@
+---
+description: TypeScript/React conventions — inlining, jj vocabulary, Effect atoms
+globs: src/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# TypeScript (`src/`)
+
+Run `pnpm lint` before finishing changes.
+
+## Extract vs inline
+
+Extract a function/hook/helper only when:
+
+- **2+ call sites**, or
+- A **required boundary** (public API, `Context.Tag` service, reusable component)
+
+**Single caller → inline** (including `useCallback` that only forwards to one setter).
+
+Do **not** extract:
+
+- One-line passthroughs
+- `openShortcutLabel`-style helpers with one consumer
+- `const x = …` used once in the next line — inline into the consumer
+
+Keep a binding when:
+
+- Used **2+ times**
+
+Do **not** add `useCallback` / `useMemo` / `memo` by default — **React Compiler** (`babel-plugin-react-compiler` via `@rolldown/plugin-babel` in `vite.config.ts`) handles stable props and derived values. Use manual memo only for non-React APIs that compare by reference.
+
+## jj vocabulary (workspace layer)
+
+Align with Rust `RepoSummary` / `jj_workspace`:
+
+- `workspace_root` not `path` for repo identity
+- `workspace_name`, `cwd_path`, `pointer_repo_path`
+- `openAt(workspaceRoot)` — Tauri arg stays `path` at the FFI boundary only
+
+## Effect / atoms
+
+- Share `toRepoCommandError` + `invokeCommand` across commands (2+ uses)
+- Prefer inlining single-use `Effect.tryPromise` blocks inside `Effect.gen`
+- After open/pick: refresh recents with `get.set(recentsAtom, Result.success(yield* repos.listRecents))`
+
+No type assertions (`typescript/consistent-type-assertions`: never).

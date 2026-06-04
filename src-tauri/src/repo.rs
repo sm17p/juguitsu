@@ -2,18 +2,15 @@ use std::{
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
-    time::{SystemTime, UNIX_EPOCH},
 };
 
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 use thiserror::Error;
 
-use crate::jj_workspace::{
-    self, GitRepoLayout, JjWorkspaceInspect, RepoEngine, RepoLinkKind, SiblingWorkspace,
-};
+use crate::jj_workspace::{self, GitRepoLayout, RepoEngine, RepoLinkKind, SiblingWorkspace};
 
-const RECENTS_SCHEMA_VERSION: u32 = 2;
+const RECENTS_SCHEMA_VERSION: u32 = 1;
 const RECENTS_FILE: &str = "recents.json";
 const RECENTS_TMP: &str = "recents.json.tmp";
 const MAX_RECENTS: usize = 20;
@@ -33,7 +30,7 @@ enum RepoError {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub struct RepoSummary {
-    pub path: String,
+    pub workspace_root: String,
     pub name: String,
     pub last_opened_at: u64,
     pub engine: RepoEngine,
@@ -47,9 +44,9 @@ pub struct RepoSummary {
     pub colocated: bool,
     pub git_repo_layout: GitRepoLayout,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub opened_path: Option<String>,
+    pub cwd_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub repo_path_main: Option<String>,
+    pub pointer_repo_path: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sibling_workspaces: Option<Vec<SiblingWorkspace>>,
 }
@@ -80,104 +77,37 @@ fn recents_path(data_dir: &Path) -> PathBuf {
     data_dir.join(RECENTS_FILE)
 }
 
-fn now_unix() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_secs())
-        .unwrap_or(0)
-}
-
-fn repo_name(path: &Path) -> String {
-    path.file_name()
-        .and_then(|name| name.to_str())
-        .unwrap_or("repo")
-        .to_string()
-}
-
-fn summary_from_inspect(inspect: JjWorkspaceInspect, last_opened_at: u64) -> RepoSummary {
-    let path = inspect.workspace_root.to_string_lossy().into_owned();
-    let name = repo_name(&inspect.workspace_root);
-    let opened_path = inspect
-        .opened_path
-        .map(|value| value.to_string_lossy().into_owned());
-    let repo_path = inspect.repo_path.to_string_lossy().into_owned();
-    let repo_path_main = inspect
-        .repo_path_main
-        .map(|value| value.to_string_lossy().into_owned());
-    let sibling_workspaces = if inspect.sibling_workspaces.is_empty() {
-        None
-    } else {
-        Some(inspect.sibling_workspaces)
-    };
-
-    RepoSummary {
-        path,
-        name,
-        last_opened_at,
-        engine: RepoEngine::Jj,
-        workspace_name: inspect.workspace_name,
-        repo_path,
-        repo_link_kind: inspect.repo_link_kind,
-        commit_store: inspect.commit_store,
-        op_store: inspect.op_store,
-        op_heads: inspect.op_heads,
-        working_copy_store: inspect.working_copy_store,
-        colocated: inspect.colocated,
-        git_repo_layout: inspect.git_repo_layout,
-        opened_path,
-        repo_path_main,
-        sibling_workspaces,
-    }
-}
-
-fn workspace_root_valid(path: &Path) -> bool {
-    jj_workspace::is_valid_workspace_root(path)
-}
-
-fn prune_recents(recents: Vec<RepoSummary>) -> Vec<RepoSummary> {
-    recents
-        .into_iter()
-        .filter(|recent| workspace_root_valid(Path::new(&recent.path)))
-        .collect()
-}
-
 fn enforce_max_recents(recents: &mut Vec<RepoSummary>) {
     while recents.len() > MAX_RECENTS {
-        let oldest_idx = recents
-            .iter()
-            .enumerate()
-            .min_by_key(|(_, recent)| recent.last_opened_at)
-            .map(|(index, _)| index)
-            .unwrap_or(0);
-        recents.remove(oldest_idx);
+        recents.remove(
+            recents
+                .iter()
+                .enumerate()
+                .min_by_key(|(_, workspace_summary)| workspace_summary.last_opened_at)
+                .map(|(index, _)| index)
+                .unwrap_or(0),
+        );
     }
-}
-
-fn upsert_recent(recents: &mut Vec<RepoSummary>, summary: RepoSummary) {
-    if let Some(existing) = recents
-        .iter_mut()
-        .find(|recent| recent.path == summary.path)
-    {
-        *existing = summary;
-        return;
-    }
-    recents.push(summary);
-    enforce_max_recents(recents);
 }
 
 fn load_recents(app: &AppHandle) -> Result<RecentsStore, RepoError> {
-    let data_dir = resolve_data_dir(app)?;
-    let path = recents_path(&data_dir);
+    let recents_file_path = recents_path(&resolve_data_dir(app)?);
 
-    if !path.exists() {
+    if !recents_file_path.exists() {
         return Ok(RecentsStore::empty());
     }
 
-    let raw = fs::read_to_string(&path)?;
-    let store = match serde_json::from_str::<RecentsStore>(&raw) {
-        Ok(store) if store.schema_version == RECENTS_SCHEMA_VERSION => store,
-        Ok(store) => {
-            tracing::error!(version = store.schema_version, "unsupported recents schema");
+    let recents_store = match serde_json::from_str::<RecentsStore>(&fs::read_to_string(
+        &recents_file_path,
+    )?) {
+        Ok(recents_store) if recents_store.schema_version == RECENTS_SCHEMA_VERSION => {
+            recents_store
+        }
+        Ok(recents_store) => {
+            tracing::error!(
+                version = recents_store.schema_version,
+                "unsupported recents schema"
+            );
             return Ok(RecentsStore::empty());
         }
         Err(error) => {
@@ -186,83 +116,127 @@ fn load_recents(app: &AppHandle) -> Result<RecentsStore, RepoError> {
         }
     };
 
-    let before_prune = store.recents.clone();
-    let mut recents = prune_recents(store.recents);
-    enforce_max_recents(&mut recents);
+    let recents_before_prune = recents_store.recents.clone();
+    let mut workspace_summaries = recents_store
+        .recents
+        .into_iter()
+        .filter(|workspace_summary| {
+            jj_workspace::is_valid_workspace_root(Path::new(&workspace_summary.workspace_root))
+        })
+        .collect();
+    enforce_max_recents(&mut workspace_summaries);
 
-    let needs_save = recents != before_prune;
-
-    if needs_save {
+    if workspace_summaries != recents_before_prune {
         save_recents_store(
             app,
             &RecentsStore {
                 schema_version: RECENTS_SCHEMA_VERSION,
-                recents: recents.clone(),
+                recents: workspace_summaries.clone(),
             },
         )?;
     }
 
     Ok(RecentsStore {
         schema_version: RECENTS_SCHEMA_VERSION,
-        recents,
+        recents: workspace_summaries,
     })
 }
 
-fn save_recents_store(app: &AppHandle, store: &RecentsStore) -> Result<(), RepoError> {
+fn save_recents_store(app: &AppHandle, recents_store: &RecentsStore) -> Result<(), RepoError> {
     let data_dir = resolve_data_dir(app)?;
     fs::create_dir_all(&data_dir)?;
 
-    let path = recents_path(&data_dir);
     let tmp_path = data_dir.join(RECENTS_TMP);
-    let json = serde_json::to_string_pretty(store)?;
 
     {
         let mut file = File::create(&tmp_path)?;
-        file.write_all(json.as_bytes())?;
+        file.write_all(serde_json::to_string_pretty(recents_store)?.as_bytes())?;
         file.sync_all()?;
     }
 
-    fs::rename(tmp_path, path)?;
+    fs::rename(tmp_path, recents_path(&data_dir))?;
     Ok(())
-}
-
-fn open_repo_at_sync(app: AppHandle, path: PathBuf) -> Result<RepoSummary, RepoError> {
-    let inspect = futures::executor::block_on(jj_workspace::inspect_jj_workspace(&path)).map_err(
-        |error| match error {
-            jj_workspace::JjWorkspaceError::NotJjRepo(message) => RepoError::NotJjRepo(message),
-            other => RepoError::NotJjRepo(other.to_string()),
-        },
-    )?;
-    let summary = summary_from_inspect(inspect, now_unix());
-
-    let mut store = load_recents(&app).unwrap_or_else(|_| RecentsStore::empty());
-    upsert_recent(&mut store.recents, summary.clone());
-    save_recents_store(&app, &store)?;
-
-    tracing::info!(
-        path = %summary.path,
-        workspace_name = %summary.workspace_name,
-        commit_store = %summary.commit_store,
-        git_repo_layout = ?summary.git_repo_layout,
-        "opened repo"
-    );
-    Ok(summary)
 }
 
 #[tauri::command]
 pub fn list_recent_repos(app: AppHandle) -> Result<Vec<RepoSummary>, String> {
     load_recents(&app)
-        .map(|store| store.recents)
+        .map(|recents_store| recents_store.recents)
         .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
 pub async fn open_repo_at(app: AppHandle, path: String) -> Result<RepoSummary, String> {
-    tauri::async_runtime::spawn_blocking(move || open_repo_at_sync(app, PathBuf::from(path)))
-        .await
-        .map_err(|join_error| join_error.to_string())?
-        .map_err(|error| {
-            tracing::error!(error = %error, "failed to open repo");
-            error.to_string()
-        })
+    tauri::async_runtime::spawn_blocking(move || {
+        let workspace_inspect = futures::executor::block_on(jj_workspace::inspect_jj_workspace(
+            Path::new(&path),
+        ))
+        .map_err(|error| match error {
+            jj_workspace::JjWorkspaceError::NotJjRepo(message) => RepoError::NotJjRepo(message),
+            other => RepoError::NotJjRepo(other.to_string()),
+        })?;
+        let workspace_summary = RepoSummary {
+            workspace_root: workspace_inspect
+                .workspace_root
+                .to_string_lossy()
+                .into_owned(),
+            name: workspace_inspect
+                .workspace_root
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("repo")
+                .to_string(),
+            last_opened_at: jiff::Timestamp::now()
+                .as_second()
+                .try_into()
+                .unwrap_or(0),
+            cwd_path: workspace_inspect
+                .cwd_path
+                .map(|cwd_path| cwd_path.to_string_lossy().into_owned()),
+            repo_path: workspace_inspect.repo_path.to_string_lossy().into_owned(),
+            pointer_repo_path: workspace_inspect
+                .pointer_repo_path
+                .map(|pointer_repo_path| pointer_repo_path.to_string_lossy().into_owned()),
+            sibling_workspaces: if workspace_inspect.sibling_workspaces.is_empty() {
+                None
+            } else {
+                Some(workspace_inspect.sibling_workspaces)
+            },
+            engine: RepoEngine::Jj,
+            workspace_name: workspace_inspect.workspace_name,
+            repo_link_kind: workspace_inspect.repo_link_kind,
+            commit_store: workspace_inspect.commit_store,
+            op_store: workspace_inspect.op_store,
+            op_heads: workspace_inspect.op_heads,
+            working_copy_store: workspace_inspect.working_copy_store,
+            colocated: workspace_inspect.colocated,
+            git_repo_layout: workspace_inspect.git_repo_layout,
+        };
+
+        let mut recents_store = load_recents(&app).unwrap_or_else(|_| RecentsStore::empty());
+        if let Some(existing) = recents_store.recents.iter_mut().find(|existing| {
+            existing.workspace_root == workspace_summary.workspace_root
+        }) {
+            *existing = workspace_summary.clone();
+        } else {
+            recents_store.recents.push(workspace_summary.clone());
+            enforce_max_recents(&mut recents_store.recents);
+        }
+        save_recents_store(&app, &recents_store)?;
+
+        tracing::info!(
+            workspace_root = %workspace_summary.workspace_root,
+            workspace_name = %workspace_summary.workspace_name,
+            commit_store = %workspace_summary.commit_store,
+            git_repo_layout = ?workspace_summary.git_repo_layout,
+            "opened workspace"
+        );
+        Ok(workspace_summary)
+    })
+    .await
+    .map_err(|join_error| join_error.to_string())?
+    .map_err(|error: RepoError| {
+        tracing::error!(error = %error, "failed to open workspace");
+        error.to_string()
+    })
 }

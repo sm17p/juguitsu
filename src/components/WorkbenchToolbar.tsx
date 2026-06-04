@@ -9,7 +9,7 @@ type Props = {
   recents: readonly RepoSummary[];
   narrow: boolean;
   onOpen: () => void;
-  onSelectRecent: (path: string) => void;
+  onSelectRecent: (workspaceRoot: string) => void;
 };
 
 export default function WorkbenchToolbar({ repo, recents, narrow, onOpen, onSelectRecent }: Props) {
@@ -19,7 +19,7 @@ export default function WorkbenchToolbar({ repo, recents, narrow, onOpen, onSele
     <header className="flex h-8 min-h-8 shrink-0 items-center gap-1 border-b border-border px-2 text-xs">
       {narrow ? (
         <NarrowRecentsMenu
-          activePath={repo?.path ?? null}
+          activeWorkspaceRoot={repo?.workspace_root ?? null}
           recents={recents}
           onSelectRecent={onSelectRecent}
         />

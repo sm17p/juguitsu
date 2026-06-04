@@ -5,7 +5,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use jiff::Zoned;
 use tauri::Manager;
 use thiserror::Error;
 
@@ -17,10 +16,6 @@ pub enum CrashLogError {
     LogDir(String),
     #[error("failed to write crash log: {0}")]
     Write(#[from] std::io::Error),
-}
-
-pub fn now_zoned() -> String {
-    Zoned::now().to_string()
 }
 
 pub fn resolve_log_dir(app: &tauri::AppHandle) -> Result<PathBuf, CrashLogError> {
@@ -41,7 +36,7 @@ pub fn append_crash_entry(
         .append(true)
         .open(log_dir.join(CRASH_FILE))?;
 
-    writeln!(file, "[{}] [{}] {}", now_zoned(), source, message)?;
+    writeln!(file, "[{}] [{}] {}", jiff::Zoned::now(), source, message)?;
     if let Some(detail) = detail.filter(|value| !value.is_empty()) {
         writeln!(file, "{detail}")?;
     }
@@ -54,12 +49,16 @@ pub fn install_panic_hook(log_dir: PathBuf) {
     let prev = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |info| {
         let backtrace = Backtrace::force_capture().to_string();
-        let detail = if backtrace.contains("<disabled>") || backtrace.trim().is_empty() {
-            None
-        } else {
-            Some(backtrace.as_str())
-        };
-        let _ = append_crash_entry(&log_dir, "panic", &info.to_string(), detail);
+        let _ = append_crash_entry(
+            &log_dir,
+            "panic",
+            &info.to_string(),
+            if backtrace.contains("<disabled>") || backtrace.trim().is_empty() {
+                None
+            } else {
+                Some(backtrace.as_str())
+            },
+        );
         prev(info);
     }));
 }
@@ -71,7 +70,11 @@ pub fn log_crash(
     message: String,
     stack: Option<String>,
 ) -> Result<(), String> {
-    let log_dir = resolve_log_dir(&app).map_err(|error| error.to_string())?;
-    append_crash_entry(&log_dir, &source, &message, stack.as_deref())
-        .map_err(|error| error.to_string())
+    append_crash_entry(
+        &resolve_log_dir(&app).map_err(|error| error.to_string())?,
+        &source,
+        &message,
+        stack.as_deref(),
+    )
+    .map_err(|error| error.to_string())
 }

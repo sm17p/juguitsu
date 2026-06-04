@@ -17,6 +17,9 @@ importers:
       '@effect-atom/atom-react':
         specifier: ^0.5.0
         version: 0.5.0(@effect/experimental@0.60.0(@effect/platform@0.94.5(effect@3.21.2))(effect@3.21.2))(@effect/platform@0.94.5(effect@3.21.2))(@effect/rpc@0.73.2(@effect/platform@0.94.5(effect@3.21.2))(effect@3.21.2))(effect@3.21.2)(react@19.2.6)(scheduler@0.27.0)
+      '@tanstack/react-hotkeys':
+        specifier: ^0.10.0
+        version: 0.10.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@tauri-apps/api':
         specifier: ^2.11.0
         version: 2.11.0
@@ -48,12 +51,18 @@ importers:
         specifier: ^3.6.0
         version: 3.6.0
     devDependencies:
+      '@babel/core':
+        specifier: ^7.29.7
+        version: 7.29.7
       '@effect/language-service':
         specifier: ^0.86.2
         version: 0.86.2
       '@iconify-json/tabler':
         specifier: ^1.2.35
         version: 1.2.35
+      '@rolldown/plugin-babel':
+        specifier: ^0.2.3
+        version: 0.2.3(@babel/core@7.29.7)(rolldown@1.0.2)(vite@8.0.14(@types/node@25.9.1)(jiti@2.7.0))
       '@svgr/core':
         specifier: ^8.1.0
         version: 8.1.0(typescript@6.0.3)
@@ -66,6 +75,9 @@ importers:
       '@tauri-apps/cli':
         specifier: ^2.11.2
         version: 2.11.2
+      '@types/babel__core':
+        specifier: ^7.20.5
+        version: 7.20.5
       '@types/node':
         specifier: ^25.9.1
         version: 25.9.1
@@ -77,13 +89,16 @@ importers:
         version: 19.2.3(@types/react@19.2.15)
       '@vitejs/plugin-react':
         specifier: ^6.0.2
-        version: 6.0.2(vite@8.0.14(@types/node@25.9.1)(jiti@2.7.0))
+        version: 6.0.2(@rolldown/plugin-babel@0.2.3(@babel/core@7.29.7)(rolldown@1.0.2)(vite@8.0.14(@types/node@25.9.1)(jiti@2.7.0)))(babel-plugin-react-compiler@1.0.0)(vite@8.0.14(@types/node@25.9.1)(jiti@2.7.0))
       agentation:
         specifier: ^3.0.2
         version: 3.0.2(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       agentation-mcp:
         specifier: ^1.2.0
         version: 1.2.0
+      babel-plugin-react-compiler:
+        specifier: ^1.0.0
+        version: 1.0.0
       oxfmt:
         specifier: ^0.52.0
         version: 0.52.0
@@ -700,6 +715,23 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@rolldown/plugin-babel@0.2.3':
+    resolution: {integrity: sha512-+zEk16yGlz1F9STiRr6uG9hmIXb6nprjLczV/htGptYuLoCuxb+itZ03RKCEeOhBpDDd1NU7qF6x1VLMUp62bw==}
+    engines: {node: '>=22.12.0 || ^24.0.0'}
+    peerDependencies:
+      '@babel/core': ^7.29.0 || ^8.0.0-rc.1
+      '@babel/plugin-transform-runtime': ^7.29.0 || ^8.0.0-rc.1
+      '@babel/runtime': ^7.27.0 || ^8.0.0-rc.1
+      rolldown: ^1.0.0-rc.5
+      vite: ^8.0.0
+    peerDependenciesMeta:
+      '@babel/plugin-transform-runtime':
+        optional: true
+      '@babel/runtime':
+        optional: true
+      vite:
+        optional: true
+
   '@rolldown/pluginutils@1.0.1':
     resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
 
@@ -871,6 +903,26 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
+  '@tanstack/hotkeys@0.8.0':
+    resolution: {integrity: sha512-vqH7X9nb0MTJ/O08++dB5bP9jgj4+BIPOUu/U+6myG86lDsirZSVSobpq5UQpE7nBuk62i8eIYeOhd+OMl/UrA==}
+    engines: {node: '>=18'}
+
+  '@tanstack/react-hotkeys@0.10.0':
+    resolution: {integrity: sha512-GwOSndI5j3qBVYTmgP1mYyRTnlxb2MS17cwGlsavSxMQPSnmDf+m3LzMIpRMs+3zzQMjg3cYhHsFYizYlFI2tw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      react: '>=16.8'
+      react-dom: '>=16.8'
+
+  '@tanstack/react-store@0.11.0':
+    resolution: {integrity: sha512-tX4YXh3PDkmpvGQWkWqKpzs/MSqbtuwY9dWdWhtV9Q50PmO+jOkUKIWIX4G85dwt7lxdHLXsiaEKPdKmC8F41w==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  '@tanstack/store@0.11.0':
+    resolution: {integrity: sha512-WlzzCt3xi0G6pCAJu1U+2jiECwabETDpQDi3hfkFZvJii9AuZqEKbOiVarX1/bWhTNjU486yQtJCCasi/0q+Cw==}
+
   '@tauri-apps/api@2.11.0':
     resolution: {integrity: sha512-7CinYODhky9lmO23xHnUFv0Xt43fbtWMyxZcLcRBlFkcgXKuEirBvHpmtJ89YMhyeGcq20Wuc47Fa4XjyniywA==}
 
@@ -961,6 +1013,18 @@ packages:
 
   '@tybys/wasm-util@0.10.2':
     resolution: {integrity: sha512-RoBvJ2X0wuKlWFIjrwffGw1IqZHKQqzIchKaadZZfnNpsAYp2mM0h36JtPCjNDAHGgYez/15uMBpfGwchhiMgg==}
+
+  '@types/babel__core@7.20.5':
+    resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
+
+  '@types/babel__generator@7.27.0':
+    resolution: {integrity: sha512-ufFd2Xi92OAVPYsy+P4n7/U7e68fex0+Ee8gSG9KX7eo084CWiQ4sdxktvdl0bOPupXtVJPY19zk6EwWqUQ8lg==}
+
+  '@types/babel__template@7.4.4':
+    resolution: {integrity: sha512-h/NUaSyG5EyxBIp8YRxo4RMe2/qQgvyowRwVMzhYhBCONbW8PUsg4lkFMrhgZhUe5z3L3MiLDuvyJ/CaPa2A8A==}
+
+  '@types/babel__traverse@7.28.0':
+    resolution: {integrity: sha512-8PvcXf70gTDZBgt9ptxJ8elBeBjcLOAcOtoO/mPJjtji1+CdGbHgm77om1GrsPxsiE+uXIpNSK64UYaIwQXd4Q==}
 
   '@types/node@25.9.1':
     resolution: {integrity: sha512-xfrlY7UD5rMJk3ZVJP8BNzS28J36YJg+xp+LPXV1TdWxr8uMH5A860QNxYDGQe/ylDSgjxE52Q9VnO7p75tJxg==}
@@ -1258,6 +1322,9 @@ packages:
 
   argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
+
+  babel-plugin-react-compiler@1.0.0:
+    resolution: {integrity: sha512-Ixm8tFfoKKIPYdCCKYTsqv+Fd4IJ0DQqMyEimo+pxUOMUR9cVPlwTrFt9Avu+3cb6Zp3mAzl+t1MrG2fxxKsxw==}
 
   base64-js@1.5.1:
     resolution: {integrity: sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==}
@@ -2134,6 +2201,11 @@ packages:
   uqr@0.1.3:
     resolution: {integrity: sha512-0rjE8iEJe4YmT9TOhwsZtqCMRLc5DXZUI2UEYUUg63ikBkqqE5EYWaI0etFe/5KUcmcYwLih2RND1kq+hrUJXA==}
 
+  use-sync-external-store@1.6.0:
+    resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
@@ -2728,6 +2800,14 @@ snapshots:
   '@rolldown/binding-win32-x64-msvc@1.0.2':
     optional: true
 
+  '@rolldown/plugin-babel@0.2.3(@babel/core@7.29.7)(rolldown@1.0.2)(vite@8.0.14(@types/node@25.9.1)(jiti@2.7.0))':
+    dependencies:
+      '@babel/core': 7.29.7
+      picomatch: 4.0.4
+      rolldown: 1.0.2
+    optionalDependencies:
+      vite: 8.0.14(@types/node@25.9.1)(jiti@2.7.0)
+
   '@rolldown/pluginutils@1.0.1': {}
 
   '@standard-schema/spec@1.1.0': {}
@@ -2874,6 +2954,26 @@ snapshots:
       tailwindcss: 4.3.0
       vite: 8.0.14(@types/node@25.9.1)(jiti@2.7.0)
 
+  '@tanstack/hotkeys@0.8.0':
+    dependencies:
+      '@tanstack/store': 0.11.0
+
+  '@tanstack/react-hotkeys@0.10.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+    dependencies:
+      '@tanstack/hotkeys': 0.8.0
+      '@tanstack/react-store': 0.11.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+      react: 19.2.6
+      react-dom: 19.2.6(react@19.2.6)
+
+  '@tanstack/react-store@0.11.0(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+    dependencies:
+      '@tanstack/store': 0.11.0
+      react: 19.2.6
+      react-dom: 19.2.6(react@19.2.6)
+      use-sync-external-store: 1.6.0(react@19.2.6)
+
+  '@tanstack/store@0.11.0': {}
+
   '@tauri-apps/api@2.11.0': {}
 
   '@tauri-apps/cli-darwin-arm64@2.11.2':
@@ -2940,6 +3040,27 @@ snapshots:
       tslib: 2.8.1
     optional: true
 
+  '@types/babel__core@7.20.5':
+    dependencies:
+      '@babel/parser': 7.29.7
+      '@babel/types': 7.29.7
+      '@types/babel__generator': 7.27.0
+      '@types/babel__template': 7.4.4
+      '@types/babel__traverse': 7.28.0
+
+  '@types/babel__generator@7.27.0':
+    dependencies:
+      '@babel/types': 7.29.7
+
+  '@types/babel__template@7.4.4':
+    dependencies:
+      '@babel/parser': 7.29.7
+      '@babel/types': 7.29.7
+
+  '@types/babel__traverse@7.28.0':
+    dependencies:
+      '@babel/types': 7.29.7
+
   '@types/node@25.9.1':
     dependencies:
       undici-types: 7.24.6
@@ -2952,10 +3073,13 @@ snapshots:
     dependencies:
       csstype: 3.2.3
 
-  '@vitejs/plugin-react@6.0.2(vite@8.0.14(@types/node@25.9.1)(jiti@2.7.0))':
+  '@vitejs/plugin-react@6.0.2(@rolldown/plugin-babel@0.2.3(@babel/core@7.29.7)(rolldown@1.0.2)(vite@8.0.14(@types/node@25.9.1)(jiti@2.7.0)))(babel-plugin-react-compiler@1.0.0)(vite@8.0.14(@types/node@25.9.1)(jiti@2.7.0))':
     dependencies:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.0.14(@types/node@25.9.1)(jiti@2.7.0)
+    optionalDependencies:
+      '@rolldown/plugin-babel': 0.2.3(@babel/core@7.29.7)(rolldown@1.0.2)(vite@8.0.14(@types/node@25.9.1)(jiti@2.7.0))
+      babel-plugin-react-compiler: 1.0.0
 
   '@zag-js/accordion@1.41.1':
     dependencies:
@@ -3557,6 +3681,10 @@ snapshots:
       require-from-string: 2.0.2
 
   argparse@2.0.1: {}
+
+  babel-plugin-react-compiler@1.0.0:
+    dependencies:
+      '@babel/types': 7.29.7
 
   base64-js@1.5.1: {}
 
@@ -4434,6 +4562,10 @@ snapshots:
       picocolors: 1.1.1
 
   uqr@0.1.3: {}
+
+  use-sync-external-store@1.6.0(react@19.2.6):
+    dependencies:
+      react: 19.2.6
 
   util-deprecate@1.0.2: {}
 

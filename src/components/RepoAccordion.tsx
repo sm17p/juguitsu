@@ -12,23 +12,30 @@ import RepoPanel from "@/components/RepoPanel";
 
 type Props = {
   recents: readonly RepoSummary[];
-  activePath: string | null;
+  activeWorkspaceRoot: string | null;
   onOpen: () => void;
-  onSelectRecent: (path: string) => void;
+  onSelectRecent: (workspaceRoot: string) => void;
 };
 
 const triggerClass =
   "focus-kbd flex h-8 min-h-8 w-full cursor-pointer items-center gap-1.5 rounded px-1 text-left text-xs transition-colors duration-150 motion-reduce:transition-none";
 
-export default function RepoAccordion({ recents, activePath, onOpen, onSelectRecent }: Props) {
+export default function RepoAccordion({
+  recents,
+  activeWorkspaceRoot,
+  onOpen,
+  onSelectRecent,
+}: Props) {
   const [expanded, setExpanded] = useState<string[]>(() =>
-    activePath != null ? [activePath] : [],
+    activeWorkspaceRoot != null ? [activeWorkspaceRoot] : [],
   );
 
   useEffect(() => {
-    if (activePath == null) return;
-    setExpanded((current) => (current.includes(activePath) ? current : [...current, activePath]));
-  }, [activePath]);
+    if (activeWorkspaceRoot == null) return;
+    setExpanded((current) =>
+      current.includes(activeWorkspaceRoot) ? current : [...current, activeWorkspaceRoot],
+    );
+  }, [activeWorkspaceRoot]);
 
   return (
     <section aria-label="Repositories" className="flex min-h-0 flex-1 flex-col gap-0">
@@ -49,9 +56,13 @@ export default function RepoAccordion({ recents, activePath, onOpen, onSelectRec
             onValueChange={({ value }) => setExpanded(value)}
           >
             {recents.map((recent) => {
-              const active = recent.path === activePath;
+              const active = recent.workspace_root === activeWorkspaceRoot;
               return (
-                <Accordion.Item key={recent.path} className="flex flex-col" value={recent.path}>
+                <Accordion.Item
+                  key={recent.workspace_root}
+                  className="flex flex-col"
+                  value={recent.workspace_root}
+                >
                   <Accordion.ItemTrigger
                     className={cn(
                       triggerClass,
@@ -59,7 +70,7 @@ export default function RepoAccordion({ recents, activePath, onOpen, onSelectRec
                         ? "bg-accent-subtle font-medium text-fg"
                         : "text-fg-muted hover:bg-bg-subtle hover:text-fg",
                     )}
-                    onClick={() => onSelectRecent(recent.path)}
+                    onClick={() => onSelectRecent(recent.workspace_root)}
                   >
                     <IconFolder
                       aria-hidden
