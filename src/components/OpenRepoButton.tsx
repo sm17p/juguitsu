@@ -1,6 +1,8 @@
+import { formatForDisplay } from "@tanstack/react-hotkeys";
 import IconFolderPlus from "~icons/tabler/folder-plus";
 
 import cn from "@/lib/cn";
+import { OPEN_REPO_HOTKEY } from "@/lib/open-repo-hotkey";
 
 type Props = {
   className?: string;
@@ -8,12 +10,7 @@ type Props = {
 };
 
 export default function OpenRepoButton({ className, onOpen }: Props) {
-  const openShortcut =
-    typeof navigator === "undefined"
-      ? "Ctrl+O"
-      : /Mac|iPhone|iPod|iPad/.test(navigator.userAgent)
-        ? "⌘O"
-        : "Ctrl+O";
+  const openShortcut = formatForDisplay(OPEN_REPO_HOTKEY);
 
   return (
     <button

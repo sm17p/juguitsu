@@ -1,9 +1,10 @@
 import { Splitter } from "@ark-ui/react/splitter";
+import { useHotkey } from "@tanstack/react-hotkeys";
 import { useEffect, useState } from "react";
 
 import cn from "@/lib/cn";
+import { OPEN_REPO_HOTKEY } from "@/lib/open-repo-hotkey";
 import useMediaNarrow from "@/lib/use-media-narrow";
-import useOpenRepoShortcut from "@/lib/use-open-repo-shortcut";
 import useWorkspace from "@/lib/use-workspace";
 
 import AppTabs from "@/components/AppTabs";
@@ -17,7 +18,9 @@ export default function WorkbenchLayout() {
   const [outerSize, setOuterSize] = useState<number[]>([18, 82]);
   const [innerSize, setInnerSize] = useState<number[]>([28, 72]);
 
-  useOpenRepoShortcut(pickAndOpen);
+  useHotkey(OPEN_REPO_HOTKEY, () => pickAndOpen(), {
+    meta: { name: "Open repository", description: "Pick a jj workspace folder" },
+  });
 
   useEffect(() => {
     if (narrow) {
